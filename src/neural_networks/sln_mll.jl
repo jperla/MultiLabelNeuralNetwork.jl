@@ -61,17 +61,27 @@ end
 
 function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
     # Modifies the weights in the neural network through backpropagation
- 
+
     # TODO: calculate
+
+    ################################################################
+    #   Calculate delta_k
+    #   Calculate delta_j for each interior node
+    #   Calculate weight updates
+    ################################################################
+
+
 end
+
+
 
 function gradient(sln::SLN_MLL, x::Sample)
     @assert num_dimensions(sln) == length(x)
-    g = zeros(num_labels(sln), num_dimensions(sln))                                                                   
+    g = zeros(num_labels(sln), num_dimensions(sln))
 
     # TODO: calculate
 
     # this needs to return a gradient for each output label, right?
-    @assert size(g) == (num_labels(sln), num_dimensions(sln))                                                         
-    return g                                          
+    @assert size(g) == (num_labels(sln), num_dimensions(sln))
+    return g
 end
