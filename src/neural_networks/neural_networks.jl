@@ -1,7 +1,7 @@
 include("abstract_neural_networks.jl")
 
 function zero!(nn::NeuralNetworkStorage)
-    # Zeroes out all of the arrays in the neural network type
+    # Zeroes out all of the Weights in the neural network
     fields = names(nn)
     types = typeof(nn).types
     for (t,f) in zip(types, fields)
