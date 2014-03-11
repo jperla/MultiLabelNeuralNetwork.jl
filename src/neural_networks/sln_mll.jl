@@ -59,11 +59,19 @@ end
 # Training
 #####################################
 
+function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
+    # Modifies the weights in the neural network through backpropagation
+ 
+    # TODO: calculate
+end
+
 function gradient(sln::SLN_MLL, x::Sample)
-    # TODO: use backprop
-    # this needs to return a gradient for each output label, right?
     @assert num_dimensions(sln) == length(x)
     g = zeros(num_labels(sln), num_dimensions(sln))                                                                   
+
+    # TODO: calculate
+
+    # this needs to return a gradient for each output label, right?
     @assert size(g) == (num_labels(sln), num_dimensions(sln))                                                         
     return g                                          
 end
