@@ -1,1 +1,0 @@
-abstract SLN_MLLStorage
