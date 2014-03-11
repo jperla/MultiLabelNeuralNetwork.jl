@@ -63,5 +63,7 @@ function gradient(sln::SLN_MLL, x::Sample)
     # TODO: use backprop
     # this needs to return a gradient for each output label, right?
     @assert num_dimensions(sln) == length(x)
-    return zeros(num_labels(sln), num_dimensions(sln))
+    g = zeros(num_labels(sln), num_dimensions(sln))                                                                   
+    @assert size(g) == (num_labels(sln), num_dimensions(sln))                                                         
+    return g                                          
 end
