@@ -1,12 +1,12 @@
 using Base.Test
 
-import NeuralNetworks: SLN_MLL, forward_propagate, gradient
+import NeuralNetworks: SLN_MLL, forward_propagate!, gradient, calculate_label_probabilities
 import CheckGrad: checkgrad, approximately_one
 
 
 sln = SLN_MLL(10, 3, 2)
 x0 = [1, 0, 0, 1, 0.5, 1.0, 0.0, 1.0, 0.0, 1.0]
-q(x) = (forward_propagate(sln, x)[1], gradient(sln, x)[1,:])
+q(x) = (calculate_label_probabilities(sln, x)[1], gradient(sln, x)[1,:])
 
 @test approximately_one(checkgrad(q, x0))
 

@@ -11,8 +11,14 @@ type SLN_MLL <: NeuralNetworkStorage
     input_output::Weights # skip-level weights direction from input to outputs
 end
 
+type SLN_MLL_Activation
+    # single layer neural network activation levels after being trained on input
+    hidden::Activation
+    output::Activation
+end
+
 #####################################
-# Constructor
+# Constructors
 #####################################
 
 function SLN_MLL(num_dimensions::Int, num_labels::Int, num_hidden::Int)
@@ -20,6 +26,10 @@ function SLN_MLL(num_dimensions::Int, num_labels::Int, num_hidden::Int)
     input_hidden = randn(num_dimensions, num_hidden)
     hidden_output = randn(num_hidden, num_labels)
     SLN_MLL(input_hidden, hidden_output, input_output)
+end
+
+function SLN_MLL_Activation(sln::SLN_MLL)
+    SLN_MLL_Activation(zeros(num_hidden(sln)), zeros(num_output(sln)))
 end
 
 #####################################
@@ -45,14 +55,20 @@ sigmoid(x) = 1.0 / (1.0 + e^(-x))
 # Classification / Testing
 #####################################
 
-function forward_propagate(sln::SLN_MLL, x::Sample)
+function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sample)
     @assert length(x) == num_dimensions(sln)
-    hidden = relu(x' * sln.input_hidden)
-    skip_activation = x' * sln.input_output
-    hidden_activation = hidden * sln.hidden_output
-    label_probabilities = sigmoid(hidden_activation .+ skip_activation)
-    @assert length(label_probabilities) == num_labels(sln)
-    return label_probabilities
+    activation.hidden = relu(x' * sln.input_hidden)[:]
+    skip_input = x' * sln.input_output
+    hidden_input = activation.hidden' * sln.hidden_output
+    activation.output = sigmoid(hidden_input .+ skip_input)[:]
+    @assert length(activation.output) == num_labels(sln)
+    return activation
+end
+
+function calculate_label_probabilities(sln::SLN_MLL, x::Sample)
+    activation = SLN_MLL_Activation(sln)
+    forward_propagate!(sln, activation, x)
+    return activation.output
 end
 
 #####################################

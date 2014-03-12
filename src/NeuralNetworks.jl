@@ -4,7 +4,9 @@ module NeuralNetworks
 
 importall Base
 
-export SLN_MLL, forward_propagate, zero!, gradientm, log_loss
+export SLN_MLL, SLN_MLL_Activation, 
+       forward_propagate!, calculate_label_probabilities,
+       zero!, gradientm, log_loss
 
 include("neural_networks/sln_mll.jl")
 include("neural_networks/neural_networks.jl")
