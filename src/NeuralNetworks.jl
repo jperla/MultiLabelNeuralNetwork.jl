@@ -4,8 +4,8 @@ module NeuralNetworks
 
 importall Base
 
-export SLN_MLL, SLN_MLL_Activation, 
-       forward_propagate!, calculate_label_probabilities,
+export SLN_MLL, SLN_MLL_Activation,
+       forward_propagate!, back_propagate!, sigmoid_prime, square_loss, log_loss, log_loss_prime, sigmoid_prime, calculate_label_probabilities,
        zero!, gradientm, log_loss
 
 include("neural_networks/sln_mll.jl")

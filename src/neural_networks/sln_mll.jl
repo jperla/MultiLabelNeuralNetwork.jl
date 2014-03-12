@@ -51,6 +51,8 @@ relu(x) = max(0, x) # rectified linear units
 sigmoid(x) = 1.0 / (1.0 + e^(-x))
 @vectorize_1arg Number sigmoid
 
+
+
 #####################################
 # Classification / Testing
 #####################################
@@ -60,7 +62,7 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sam
     activation.hidden = relu(x' * sln.input_hidden)[:]
     skip_input = x' * sln.input_output
     hidden_input = activation.hidden' * sln.hidden_output
-    activation.output = sigmoid(hidden_input .+ skip_input)[:]
+    activation.output =  hidden_input .+ skip_input
     @assert length(activation.output) == num_labels(sln)
     return activation
 end
@@ -68,7 +70,7 @@ end
 function calculate_label_probabilities(sln::SLN_MLL, x::Sample)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, x)
-    return activation.output
+    return sigmoid(activation.output)[:]
 end
 
 #####################################
@@ -77,14 +79,28 @@ end
 
 function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
     # Modifies the weights in the neural network through backpropagation
-
     # TODO: calculate
-
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
+    activation = SLN_MLL_Activation(sln)
+    forward_propagate!(sln, activation, x)
+    probabilities = sigmoid(activation.output)[:]
+
+    deltak = zeros(length(y))
+    for i=1:length(y)
+        deltak[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
+    end
+
+    delta_h = zeros(length(activation.hidden))
+
+    for i = 1:length(delta_h)
+        for k = 1:length(activation_output)
+            delta_h[i] += deltak[k] * sln.hidden_output[i,k]
+        end
+    end
 
 
 end

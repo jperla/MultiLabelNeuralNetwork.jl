@@ -11,3 +11,8 @@ function zero!(nn::NeuralNetworkStorage)
     end
 end
 
+
+
+function sigmoid_prime(x)
+    return sigmoid(x) * (1 - sigmoid(x)
+end
