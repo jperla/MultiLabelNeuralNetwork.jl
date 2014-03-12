@@ -11,6 +11,13 @@ function zero!(nn::NeuralNetworkStorage)
     end
 end
 
+
+
+function sigmoid_prime(x)
+    return sigmoid(x) * (1 - sigmoid(x)
+end
+
+
 function top_features{T <: String}(features::Vector{T}, weights::Vector{Weight})
     # Accepts an array of weights and an array of human-readable names for the features
     # Returns a sorted list of top (absolute value) size weights (only the top N)

@@ -8,7 +8,7 @@ include("neural_networks.jl")
 type SLN_MLL <: NeuralNetworkStorage
     # single layer neural network for multi label learning with skip level weights
     input_hidden::Weights # weights to calculate hidden layer
-    hidden_output::Weights # weights to teh final layer
+    hidden_output::Weights # weights to the final layer
     input_output::Weights # skip-level weights direction from input to outputs
 end
 
@@ -16,6 +16,18 @@ type SLN_MLL_Activation
     # single layer neural network activation levels after being trained on input
     hidden::Activations
     output::Activations
+end
+
+
+type SLN_MLL_Deltas
+    hidden::Float64
+    output::FLoat64
+end
+
+type SLN_MLL_Derivatives
+    input_hidden::Array{Float64,2} # derivatives of weights to calculate hidden layer
+    hidden_output::Array{Float64,2} # derivatives of weights to the final layer
+    input_output::Array{Float64,2} # skip-level weights direction from input to outputs
 end
 
 #####################################
@@ -31,6 +43,17 @@ end
 
 function SLN_MLL_Activation(sln::SLN_MLL)
     SLN_MLL_Activation(zeros(num_hidden(sln)), zeros(num_output(sln)))
+end
+
+function SLN_MLL_Deltas(sln:SLN_MLL)
+    SLN_MLL_Deltas(zeros(num_hidden(sln)), zeros(num_output(sln)))
+end
+
+function SLN_MLL_Derivatives(sln:MLL)
+    input_hidden = zeros(size(sln.input_hidden))
+    input_output = zeros(size(sln.input_output))
+    hidden_output = zeros(size(sln.hidden_output))
+    SLN_MLL_Deltas(input_hidden, hidden_output, input_output)
 end
 
 #####################################
@@ -77,6 +100,8 @@ relu(x) = max(0, x) # rectified linear units
 sigmoid(x) = 1.0 / (1.0 + e^(-x))
 @vectorize_1arg Number sigmoid
 
+
+
 #####################################
 # Classification / Testing
 #####################################
@@ -86,7 +111,7 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sam
     activation.hidden = relu(x' * sln.input_hidden)[:]
     skip_input = x' * sln.input_output
     hidden_input = activation.hidden' * sln.hidden_output
-    activation.output = sigmoid(hidden_input .+ skip_input)[:]
+    activation.output =  hidden_input .+ skip_input
     @assert length(activation.output) == num_labels(sln)
     return activation
 end
@@ -94,7 +119,7 @@ end
 function calculate_label_probabilities(sln::SLN_MLL, x::Sample)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, x)
-    return activation.output
+    return sigmoid(activation.output)[:]
 end
 
 #####################################
@@ -103,18 +128,39 @@ end
 
 function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
     # Modifies the weights in the neural network through backpropagation
-
-    # TODO: calculate
-
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
+    activation = SLN_MLL_Activation(sln)
+    forward_propagate!(sln, activation, x)
+    probabilities = sigmoid(activation.output)[:]
 
+    deltas = SLN_MLL_Deltas(sln)
+    for i=1:length(y)
+        deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
+    end
+
+    for i = 1:length(delta_h)
+        for k = 1:length(activation_output)
+            deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
+        end
+    end
+
+    weight_derivatives = calculate_derivatives(sln, activation, deltas)
 
 end
 
+
+function calculate_derivatives(sln::SLN_MLL, activation::SLN_MLL_Activation, deltas::SLN_MLL_Deltas)
+    derivatives = SLN_MLL_Derivatives(sln)
+    #######
+    # TODO: calculate
+    ######
+
+    return derivatives
+end
 
 
 function gradient(sln::SLN_MLL, x::Sample)
@@ -148,7 +194,7 @@ function hidden_nodes_table{T<:String}(io, sln::SLN_MLL,
         features = top_features(input_names, sln.input_hidden[:,h])
         for i in 1:min(N, max(length(features), length(labels)))
             ls = if i <= length(labels) @sprintf("%s (%.4f)", labels[i][1], labels[i][2]) else "" end
-            fs = if i < length(features) @sprintf("%s (%.4f)", features[i][1], features[i][2]) else "" end 
+            fs = if i < length(features) @sprintf("%s (%.4f)", features[i][1], features[i][2]) else "" end
             @printf(io, " & %35s & %35s \\\\\n", ls, fs)
         end
         @printf(io, "\\hline\n")
