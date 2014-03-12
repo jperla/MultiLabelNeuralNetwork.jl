@@ -103,6 +103,10 @@ function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
         end
     end
 
+    ###################################
+    # TODO: Calculate derivative wrt weight , pass to adagrad? Or is it called by Adagrad?
+    # We should probably make adagrad vs SGD etc interchangable
+    ###################################
 
 end
 
@@ -139,7 +143,7 @@ function hidden_nodes_table{T<:String}(io, sln::SLN_MLL,
         features = top_features(input_names, sln.input_hidden[:,h])
         for i in 1:min(N, max(length(features), length(labels)))
             ls = if i <= length(labels) @sprintf("%s (%.4f)", labels[i][1], labels[i][2]) else "" end
-            fs = if i < length(features) @sprintf("%s (%.4f)", features[i][1], features[i][2]) else "" end 
+            fs = if i < length(features) @sprintf("%s (%.4f)", features[i][1], features[i][2]) else "" end
             @printf(io, " & %35s & %35s \\\\\n", ls, fs)
         end
         @printf(io, "\\hline\n")
