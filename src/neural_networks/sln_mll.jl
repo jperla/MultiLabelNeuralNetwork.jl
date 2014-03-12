@@ -8,7 +8,7 @@ include("neural_networks.jl")
 type SLN_MLL <: NeuralNetworkStorage
     # single layer neural network for multi label learning with skip level weights
     input_hidden::Weights # weights to calculate hidden layer
-    hidden_output::Weights # weights to teh final layer
+    hidden_output::Weights # weights to the final layer
     input_output::Weights # skip-level weights direction from input to outputs
 end
 
@@ -16,6 +16,18 @@ type SLN_MLL_Activation
     # single layer neural network activation levels after being trained on input
     hidden::Activations
     output::Activations
+end
+
+
+type SLN_MLL_Deltas
+    hidden::Float64
+    output::FLoat64
+end
+
+type SLN_MLL_Derivatives
+    input_hidden::Float64 # derivatives of weights to calculate hidden layer
+    hidden_output::Float64 # derivatives of weights to the final layer
+    input_output::Float64 # skip-level weights direction from input to outputs
 end
 
 #####################################
@@ -31,6 +43,17 @@ end
 
 function SLN_MLL_Activation(sln::SLN_MLL)
     SLN_MLL_Activation(zeros(num_hidden(sln)), zeros(num_output(sln)))
+end
+
+function SLN_MLL_Deltas(sln:SLN_MLL)
+    SLN_MLL_Deltas(zeros(num_hidden(sln)), zeros(num_output(sln)))
+end
+
+function SLN_MLL_Derivatives(sln:MLL)
+    input_hidden = zeros(size(sln.input_hidden))
+    input_output = zeros(size(sln.input_output))
+    hidden_output = zeros(size(sln.hidden_output))
+    SLN_MLL_Deltas(input_hidden, hidden_output, input_output)
 end
 
 #####################################
@@ -80,7 +103,6 @@ end
 
 function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
     # Modifies the weights in the neural network through backpropagation
-    # TODO: calculate
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
@@ -90,26 +112,30 @@ function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
     forward_propagate!(sln, activation, x)
     probabilities = sigmoid(activation.output)[:]
 
-    deltak = zeros(length(y))
+    deltas = SLN_MLL_Deltas(sln)
     for i=1:length(y)
-        deltak[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
+        deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
     end
-
-    delta_h = zeros(length(activation.hidden))
 
     for i = 1:length(delta_h)
         for k = 1:length(activation_output)
-            delta_h[i] += deltak[k] * sln.hidden_output[i,k]
+            deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
         end
     end
 
-    ###################################
-    # TODO: Calculate derivative wrt weight , pass to adagrad? Or is it called by Adagrad?
-    # We should probably make adagrad vs SGD etc interchangable
-    ###################################
+    weight_derivatives = calculate_derivatives(sln, activation, deltas)
 
 end
 
+
+function calculate_derivatives(sln::SLN_MLL, activation::SLN_MLL_Activation, deltas::SLN_MLL_Deltas)
+    derivatives = SLN_MLL_Derivatives(sln)
+    #######
+    # TODO: calculate
+    ######
+
+    return derivatives
+end
 
 
 function gradient(sln::SLN_MLL, x::Sample)
