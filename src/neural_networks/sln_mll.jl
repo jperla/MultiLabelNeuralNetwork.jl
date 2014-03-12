@@ -1,4 +1,5 @@
 include("abstract_neural_networks.jl")
+include("neural_networks.jl")
 
 #####################################
 # Weights for the neural network
@@ -101,3 +102,32 @@ function gradient(sln::SLN_MLL, x::Sample)
     @assert size(g) == (num_labels(sln), num_dimensions(sln))
     return g
 end
+
+###########################################
+# Inspection, Debugging, and Documentation
+###########################################
+
+function hidden_nodes_table{T<:String}(io, sln::SLN_MLL,
+                                       input_names::Vector{T}, output_names::Vector{T},
+                                       N::Int=6)
+    # Prints the top tags and top words for every hidden node in the neural network
+    @printf(io, "\\usepackage{multirow}\n")
+    @printf(io, "\\begin{tabular}{ |l|l|l| }\n")
+    @printf(io, "\\hline\n")
+    @printf(io, "\\multicolumn{3}{ |c| }{Hidden Units} \\\\\n")
+    @printf(io, "\\hline\n")
+    @printf(io, "Hidden Unit    &    Labels     &     Words\n")
+    for h in 1:num_hidden(sln)
+        @printf(io, "\\multirow{3}{*}{%s}\n", h)
+        labels = [(output_names[i], w) for (i, w) in top_weights(sln.hidden_output[h,:][:])]
+        features = top_features(input_names, sln.input_hidden[:,h])
+        for i in 1:min(N, max(length(features), length(labels)))
+            ls = if i <= length(labels) @sprintf("%s (%.4f)", labels[i][1], labels[i][2]) else "" end
+            fs = if i < length(features) @sprintf("%s (%.4f)", features[i][1], features[i][2]) else "" end 
+            @printf(io, " & %35s & %35s \\\\\n", ls, fs)
+        end
+        @printf(io, "\\hline\n")
+    end
+    @printf(io, "\\end{tabular}\n")
+end
+

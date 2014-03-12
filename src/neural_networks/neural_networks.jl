@@ -23,4 +23,3 @@ function top_weights(weights::Vector{Weight})
     top = [(i, w) for (_, i, w) in sort(collect(zip(abs(weights), [1:length(weights)], weights)), rev=true)]
     return top
 end
-
