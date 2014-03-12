@@ -13,8 +13,8 @@ end
 
 type SLN_MLL_Activation
     # single layer neural network activation levels after being trained on input
-    hidden::Activation
-    output::Activation
+    hidden::Activations
+    output::Activations
 end
 
 #####################################
