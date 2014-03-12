@@ -25,9 +25,9 @@ type SLN_MLL_Deltas
 end
 
 type SLN_MLL_Derivatives
-    input_hidden::Float64 # derivatives of weights to calculate hidden layer
-    hidden_output::Float64 # derivatives of weights to the final layer
-    input_output::Float64 # skip-level weights direction from input to outputs
+    input_hidden::Array{Float64,2} # derivatives of weights to calculate hidden layer
+    hidden_output::Array{Float64,2} # derivatives of weights to the final layer
+    input_output::Array{Float64,2} # skip-level weights direction from input to outputs
 end
 
 #####################################
