@@ -8,7 +8,8 @@ export SLN_MLL, SLN_MLL_Activation,
        forward_propagate!, calculate_label_probabilities,
        zero!, gradientm, log_loss,
        top_features, top_weights,
-       hidden_nodes_table
+       hidden_nodes_table,
+       fill!, flat_weights
 
 include("neural_networks/sln_mll.jl")
 include("neural_networks/neural_networks.jl")

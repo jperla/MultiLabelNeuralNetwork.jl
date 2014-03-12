@@ -43,6 +43,31 @@ num_output(sln::SLN_MLL) = size(sln.input_output, 2)
 num_labels(sln::SLN_MLL) = num_output(sln)
 
 #####################################
+# Weight read/write helper functions
+#####################################
+
+function fill!(sln::SLN_MLL, weights::Vector{Weight})
+    io = length(sln.input_output)
+    ih = length(sln.input_hidden)
+    ho = length(sln.hidden_output)
+    @assert (io + ih + ho) == length(weights)
+    sln.input_output[1:end] = weights[1:io]
+    sln.input_hidden[1:end] = weights[io+1:io+1+ih]
+    sln.hidden_output[1:end] = weights[io+1+ih+1:end]
+end
+
+function flat_weights(sln::SLN_MLL)
+    io = length(sln.input_output)
+    ih = length(sln.input_hidden)
+    ho = length(sln.hidden_output)
+    weights = ones(io + ih + ho)
+    weights[1:io] = sln.input_output[1:end]
+    weights[io+1:io+1+ih] = sln.input_hidden[1:end]
+    weights[io+1+ih+1:end] = sln.hidden_output[1:end]
+    return weights
+end
+
+#####################################
 # Vectorized Link functions
 #####################################
 
