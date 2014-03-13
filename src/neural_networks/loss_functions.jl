@@ -15,7 +15,7 @@ function log_loss(y::Array{Float64}, y_hat::Array{Float64})
     n = length(y)
     sum = 0
     for i = 1:n
-        sum += log_loss(y, y_hat)
+        sum += log_loss(y[i], y_hat[i])
     end
     return 1/n * sum
 end

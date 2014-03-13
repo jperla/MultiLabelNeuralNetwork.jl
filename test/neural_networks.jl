@@ -2,9 +2,9 @@ using Base.Test
 
 import Calculus: check_gradient
 
-import NeuralNetworks: SLN_MLL, forward_propagate!, 
+import NeuralNetworks: SLN_MLL, forward_propagate!,
                        fill!, flat_weights,
-                       gradient, calculate_label_probabilities
+                       gradient, calculate_label_probabilities, log_loss
 
 sln = SLN_MLL(10, 3, 2)
 
