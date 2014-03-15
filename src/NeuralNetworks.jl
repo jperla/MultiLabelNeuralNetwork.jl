@@ -12,10 +12,11 @@ export SLN_MLL, SLN_MLL_Activation,
        zero!, gradientm,
        top_features, top_weights,
        hidden_nodes_table,
-       fill!, flat_weights
+       fill!, flat_weights, read_data
 
 include("neural_networks/sln_mll.jl")
 include("neural_networks/neural_networks.jl")
 include("neural_networks/loss_functions.jl")
+include("neural_networks/read_data.jl")
 
 end # module NeuralNetworks

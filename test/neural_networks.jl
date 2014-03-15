@@ -4,7 +4,7 @@ import Calculus: check_gradient
 
 import NeuralNetworks: SLN_MLL, forward_propagate!,
                        fill!, flat_weights,
-                       gradient, calculate_label_probabilities, log_loss
+                       gradient, calculate_label_probabilities, log_loss, read_data
 
 sln = SLN_MLL(10, 3, 2)
 
@@ -36,3 +36,12 @@ end
 @test log_loss(1.0,0.0) == Inf
 
 @test approximately_one(log_loss(1.0,.99999999))
+
+features, labels = read_data("scene", "test")
+@test size(features) == (1196, 294)
+@test size(labels) == (1196, 6)
+
+features, labels = read_data("scene", "train")
+@test size(features) == (1211, 294)
+@test size(labels) == (1211, 6)
+
