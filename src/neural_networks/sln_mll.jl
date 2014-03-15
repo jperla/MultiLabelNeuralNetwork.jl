@@ -45,11 +45,11 @@ function SLN_MLL_Activation(sln::SLN_MLL)
     SLN_MLL_Activation(zeros(num_hidden(sln)), zeros(num_output(sln)))
 end
 
-function SLN_MLL_Deltas(sln:SLN_MLL)
+function SLN_MLL_Deltas(sln::SLN_MLL)
     SLN_MLL_Deltas(zeros(num_hidden(sln)), zeros(num_output(sln)))
 end
 
-function SLN_MLL_Derivatives(sln:MLL)
+function SLN_MLL_Derivatives(sln::SLN_MLL)
     input_hidden = zeros(size(sln.input_hidden))
     input_output = zeros(size(sln.input_output))
     hidden_output = zeros(size(sln.hidden_output))
@@ -75,8 +75,8 @@ function fill!(sln::SLN_MLL, weights::Vector{Weight})
     ho = length(sln.hidden_output)
     @assert (io + ih + ho) == length(weights)
     sln.input_output[1:end] = weights[1:io]
-    sln.input_hidden[1:end] = weights[io+1:io+1+ih]
-    sln.hidden_output[1:end] = weights[io+1+ih+1:end]
+    sln.input_hidden[1:end] = weights[io+1:io+ih]
+    sln.hidden_output[1:end] = weights[io+ih+1:end]
 end
 
 function flat_weights(sln::SLN_MLL)
@@ -85,22 +85,10 @@ function flat_weights(sln::SLN_MLL)
     ho = length(sln.hidden_output)
     weights = ones(io + ih + ho)
     weights[1:io] = sln.input_output[1:end]
-    weights[io+1:io+1+ih] = sln.input_hidden[1:end]
-    weights[io+1+ih+1:end] = sln.hidden_output[1:end]
+    weights[io+1:io+ih] = sln.input_hidden[1:end]
+    weights[io+ih+1:end] = sln.hidden_output[1:end]
     return weights
 end
-
-#####################################
-# Vectorized Link functions
-#####################################
-
-relu(x) = max(0, x) # rectified linear units
-@vectorize_1arg Number relu
-
-sigmoid(x) = 1.0 / (1.0 + e^(-x))
-@vectorize_1arg Number sigmoid
-
-
 
 #####################################
 # Classification / Testing
@@ -109,8 +97,8 @@ sigmoid(x) = 1.0 / (1.0 + e^(-x))
 function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sample)
     @assert length(x) == num_dimensions(sln)
     activation.hidden = relu(x' * sln.input_hidden)[:]
-    skip_input = x' * sln.input_output
-    hidden_input = activation.hidden' * sln.hidden_output
+    skip_input = (x' * sln.input_output)[:]
+    hidden_input = (activation.hidden' * sln.hidden_output)[:]
     activation.output =  hidden_input .+ skip_input
     @assert length(activation.output) == num_labels(sln)
     return activation
@@ -155,11 +143,9 @@ end
 
 function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, x::Sample)
     derivatives = SLN_MLL_Derivatives(sln)
-    #######
-    # TODO: calculate
-    ######
-
-    #calculate derivatives for weights from input to hidden layer
+    ############################################################
+    #  calculate derivatives for weights from input to hidden layer
+    ############################################################
     for i = 1:size(derivatives.input_hidden, 1)
         for j = 1:size(derivatives.input_hidden, 2)
             derivatives.input_hidden[i,j] = deltas.hidden[j] * x[i]

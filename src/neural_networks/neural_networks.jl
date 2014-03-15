@@ -11,12 +11,23 @@ function zero!(nn::NeuralNetworkStorage)
     end
 end
 
+#####################################
+# Vectorized Link functions
+#####################################
 
+relu(x) = max(0, x) # rectified linear units
+@vectorize_1arg Number relu
+
+sigmoid(x) = 1.0 / (1.0 + e^(-x))
+@vectorize_1arg Number sigmoid
 
 function sigmoid_prime(x)
-    return sigmoid(x) * (1 - sigmoid(x)
+    return sigmoid(x) * (1 - sigmoid(x))
 end
 
+#####################################
+# Inspection, Debugging,  and Reporting
+#####################################
 
 function top_features{T <: String}(features::Vector{T}, weights::Vector{Weight})
     # Accepts an array of weights and an array of human-readable names for the features
