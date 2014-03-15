@@ -27,7 +27,7 @@ function macro_f1(probabilities::Array{Probability, 2})
     return predictions
 end
 
-function per_example(probabilities::Array{Probability, 2})
+function per_example_f1(probabilities::Array{Probability, 2})
     n,m = size(probabilities)
     predictions = zeros(n,m)
     for i = 1:n

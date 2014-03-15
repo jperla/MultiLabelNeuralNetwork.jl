@@ -20,8 +20,8 @@ end
 
 
 type SLN_MLL_Deltas
-    hidden::Float64
-    output::FLoat64
+    hidden::Array{Float64}
+    output::Array{Float64}
 end
 
 type SLN_MLL_Derivatives
@@ -153,11 +153,30 @@ function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
 end
 
 
-function calculate_derivatives(sln::SLN_MLL, activation::SLN_MLL_Activation, deltas::SLN_MLL_Deltas)
+function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, x::Sample)
     derivatives = SLN_MLL_Derivatives(sln)
     #######
     # TODO: calculate
     ######
+
+    #calculate derivatives for weights from input to hidden layer
+    for i = 1:size(derivatives.input_hidden, 1)
+        for j = 1:size(derivatives.input_hidden, 2)
+            derivatives.input_hidden[i,j] = deltas.hidden[j] * x[i]
+        end
+    end
+
+    for i = 1:size(derivatives.hidden_output, 1)
+        for j = 1:size(derivatives.hidden_output, 2)
+            derivatives.hidden_output[i,j] = deltas.output[j] * activation.hidden[i]
+        end
+    end
+
+    for i = 1:size(derivatives.input_output, 1)
+        for j = 1:size(derivatives.input_output, 2)
+            derivatives.input_output[i,j] = deltas.output[j] * x[i]
+        end
+    end
 
     return derivatives
 end
