@@ -1,0 +1,4 @@
+p=294= number of features
+k=6= number of labels
+C=32= regularization weight. Delete if you want the program to cross validate and learn automatically.
+h=15= number of hidden units
