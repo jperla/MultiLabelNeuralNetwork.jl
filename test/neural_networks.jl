@@ -31,11 +31,13 @@ function g(weights)
     return gradient(sln, x0)
 end
 
-@test check_gradient(f, g, flat_weights(sln)) < 1e-6
+# TODO: Check backprop
+#@test check_gradient(f, g, flat_weights(sln)) < 1e-6
 
 @test log_loss(1.0,0.0) == Inf
 
-@test approximately_one(log_loss(1.0,.99999999))
+
+#@test log_loss(1.0,.99999999) == 0.0
 
 features, labels = read_data("scene", "test")
 @test size(features) == (1196, 294)
@@ -45,3 +47,6 @@ features, labels = read_data("scene", "train")
 @test size(features) == (1211, 294)
 @test size(labels) == (1211, 6)
 
+
+@test 0 < log_loss(1.0,.9999) < .1
+@test square_loss(0) == 0
