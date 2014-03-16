@@ -104,13 +104,24 @@ type MultilabelLogisticRegressionSGD{T} <: StochasticGradientDescent{T}
 end
 MultilabelLogisticRegressionSGD(dims::Int, num_labels::Int, eta0::Float64) = MultilabelLogisticRegressionSGD{T}(zeros(dims, T), num_labels, eta0)
 
+function predict{T}(g::MultilabelLogisticRegressionSGD{T}, weights::Vector{T}, x::Vector{T})
+    prediction = zeros(Float64, g.num_labels)
+    lx = length(x)
+    for i in 1:g.num_labels
+        r = (((i - 1) * lx) + 1):(((i - 1) * lx) + lx)
+        prediction[i] = sigmoid(sum(weights[r] .* x))
+    end
+    return prediction
+end
+
 function calculate_gradient!(g::MultilabelLogisticRegressionSGD{Float64}, 
                              weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
-     @assert length(weights) == (length(x) * g.num_labels) == length(g.scratch_gradient)
-     for i in 1:num_labels
-         r = (((i - 1) * lx) + 1):(((i - 1) * lx) + 1)
-         hx = sigmoid(sum(weights[r] .* x))
-         g.scratch_gradient[r] = (y[i] - hx) .* x
-     end
+    @assert length(weights) == (length(x) * g.num_labels) == length(g.scratch_gradient)
+    lx = length(x)
+    for i in 1:g.num_labels
+        r = (((i - 1) * lx) + 1):(((i - 1) * lx) + lx)
+        hx = sigmoid(sum(weights[r] .* x))
+        g.scratch_gradient[r] = (y[i] - hx) .* x
+    end
 end
 
