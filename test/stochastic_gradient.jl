@@ -12,63 +12,56 @@ function num_labels{T}(g::BinaryLogisticRegressionSGD{T})
     return 1
 end
 
-function dataset_log_loss(g, X, Y)
+function dataset_log_loss(g, w, X, Y)
     y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
     for i in 1:size(Y, 1)
-        y_hat[i,:] = predict(g, weights, X[i,:][:])
+        y_hat[i,:] = predict(g, w, X[i,:][:])
     end
     loss = log_loss(Y, y_hat)
     return loss
 end
 
+function learn(g, X, Y, w, num_iter=100)
+    loss = 1.0
+    for j in 1:num_iter
+        loss = dataset_log_loss(g, w, X, Y)
+        if j % int(num_iter / 10) == 1
+            @printf("Iteration %i (loss %4f)\n", j, loss)
+        end
+
+        for i in 1:size(Y, 1)
+            y = Y[i,:][:]
+            if length(y) == 1
+                train_samples!(g, w, X[i,:], y[1], j)
+            else
+                train_samples!(g, w, X[i,:], y, j)
+            end
+        end
+    end
+    @test loss < 0.05
+end
+
+
 # Test Binary LR SGD
-X = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1]
-Y = [1.0, 1.0, 0.0, 0.0]
+BX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1]
+BY = [1.0, 1.0, 0.0, 0.0]
 
-@assert size(X, 1) == length(Y)
+@assert size(BX, 1) == length(BY)
 
-dimensions = size(X, 2)
-weights = randn(dimensions)
+dimensions = size(BX, 2)
+bweights = randn(dimensions)
 blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
 
-loss = 1.0
-for j in 1:100
-    loss = dataset_log_loss(blrsgd, X, Y)
-    if j % 10 == 1
-        @printf("Iteration %i (loss %4f)\n", j, loss)
-    end
+learn(blrsgd, BX, BY, bweights, 100)
 
-    for i in 1:length(Y)
-        train_samples!(blrsgd, weights, X[i,:], Y[i], j)
-    end
-end
-@test loss < 0.05
+MX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1; 1 1 1 1; 1 1 1 1]
+MY = [1.0 0.0  ; 1.0 0.0; 0.0 1.0; 0.0 1.0; 1.0 1.0; 1.0 1.0]
 
+@assert size(MX, 1) == size(MY, 1)
 
+dimensions = size(MX, 2)
+nlabels = size(MY, 2)
+mweights = randn(dimensions * nlabels)
+mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0)
 
-
-X = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1; 1 1 1 1; 1 1 1 1]
-Y = [1.0 0.0  ; 1.0 0.0; 0.0 1.0; 0.0 1.0; 1.0 1.0; 1.0 1.0]
-
-@assert size(X, 1) == size(Y, 1)
-
-dimensions = size(X, 2)
-nlabels = size(Y, 2)
-weights = randn(dimensions * nlabels)
-mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(weights)), nlabels, 1.0)
-
-loss = 1.0
-for j in 1:100
-    loss = dataset_log_loss(mlrsgd, X, Y)
-    if j % 10 == 1
-        @printf("Iteration %i (loss %4f)\n", j, loss)
-    end
-
-    for i in 1:size(Y, 1)
-        train_samples!(mlrsgd, weights, X[i,:], Y[i,:][:], j)
-    end
-end
-@test loss < 0.05
-
-
-
+learn(mlrsgd, MX, MY, mweights, 100)
