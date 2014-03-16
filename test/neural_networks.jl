@@ -33,7 +33,7 @@ end
 
 # TODO: Check backprop
 y = [1.0,0,0,1,1,0,1,1,0,0]
-derivatives = backpropagate!(sln, x, y)
+derivatives = back_propagate!(sln, x, y)
 println("Derivatives: $derivatives")
 
 #@test check_gradient(f, g, flat_weights(sln)) < 1e-6
