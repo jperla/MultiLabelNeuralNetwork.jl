@@ -114,7 +114,7 @@ end
 # Training
 #####################################
 
-function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
+function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
     # Modifies the weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
