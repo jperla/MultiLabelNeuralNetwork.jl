@@ -2,7 +2,7 @@ using Base.Test
 
 import Calculus: check_gradient
 
-import NeuralNetworks: SLN_MLL, forward_propagate!,
+import NeuralNetworks: SLN_MLL, forward_propagate!, back_propagate!
                        fill!, flat_weights,
                        gradient, calculate_label_probabilities, log_loss, read_data
 
