@@ -53,7 +53,7 @@ function SLN_MLL_Derivatives(sln::SLN_MLL)
     input_hidden = zeros(size(sln.input_hidden))
     input_output = zeros(size(sln.input_output))
     hidden_output = zeros(size(sln.hidden_output))
-    SLN_MLL_Deltas(input_hidden, hidden_output, input_output)
+    SLN_MLL_Derivatives(input_hidden, hidden_output, input_output)
 end
 
 #####################################
@@ -115,7 +115,7 @@ end
 #####################################
 
 function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
-    # Modifies the weights in the neural network through backpropagation
+    # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
@@ -130,15 +130,15 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
         deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
     end
 
-    for i = 1:length(delta_h)
-        for k = 1:length(activation_output)
+    for i = 1:length(deltas.hidden)
+        for k = 1:length(activation.output)
             deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
         end
     end
 
     derivatives = SLN_MLL_Derivatives(sln)
-    weight_derivatives = calculate_derivatives!(sln, activation, derivatives, deltas)
-
+    calculate_derivatives!(sln, activation, derivatives, deltas, x)
+    return derivatives
 end
 
 

@@ -4,7 +4,7 @@ import Calculus: check_gradient
 
 import NeuralNetworks: SLN_MLL, forward_propagate!, back_propagate!,
                        fill!, flat_weights,
-                       gradient, calculate_label_probabilities, log_loss, read_data
+                       gradient, calculate_label_probabilities, log_loss, square_loss, read_data
 
 sln = SLN_MLL(10, 3, 2)
 
@@ -21,6 +21,8 @@ fill!(sln2, flat2)
 x0 = [1, 0, 0, 1, 0.5, 1.0, 0.0, 1.0, 0.0, 1.0]
 q(x) = (calculate_label_probabilities(sln, x)[1], gradient(sln, x)[1,:])
 
+println(calculate_label_probabilities(sln,x0))
+
 function f(weights)
     fill!(sln, weights)
     return calculate_label_probabilities(sln, x0)
@@ -32,9 +34,15 @@ function g(weights)
 end
 
 # TODO: Check backprop
-y = [1.0,0,0,1,1,0,1,1,0,0]
-derivatives = back_propagate!(sln, x, y)
+y = [1.0,0, 0]
+derivatives = back_propagate!(sln, x0, y)
 println("Derivatives: $derivatives")
+
+
+y = calculate_label_probabilities(sln,x0)
+derivatives = back_propagate!(sln, x0, y)
+println("Derivatives with no error... $derivatives")
+
 
 #@test check_gradient(f, g, flat_weights(sln)) < 1e-6
 
@@ -53,4 +61,4 @@ features, labels = read_data("scene", "train")
 
 
 @test 0 < log_loss(1.0,.9999) < .1
-@test square_loss(0) == 0
+@test square_loss(0.0, 0.0) == 0
