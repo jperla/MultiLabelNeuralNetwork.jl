@@ -136,13 +136,13 @@ function backpropagate!(sln::SLN_MLL, x::Sample, y::Labels)
         end
     end
 
-    weight_derivatives = calculate_derivatives(sln, activation, deltas)
+    derivatives = SLN_MLL_Derivatives(sln)
+    weight_derivatives = calculate_derivatives!(sln, activation, derivatives, deltas)
 
 end
 
 
 function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, x::Sample)
-    derivatives = SLN_MLL_Derivatives(sln)
     ############################################################
     #  calculate derivatives for weights from input to hidden layer
     ############################################################
