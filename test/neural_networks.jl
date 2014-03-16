@@ -32,6 +32,10 @@ function g(weights)
 end
 
 # TODO: Check backprop
+y = [1.0,0,0,1,1,0,1,1,0,0]
+derivatives = backpropagate!(sln, x, y)
+println("Derivatives: $derivatives")
+
 #@test check_gradient(f, g, flat_weights(sln)) < 1e-6
 
 @test log_loss(1.0,0.0) == Inf
