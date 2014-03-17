@@ -33,12 +33,12 @@ end
 function learn(g, X, Y, w, num_iter=100)
     loss = 1.0
     for j in 1:num_iter
-        for i in 1:size(Y, 1)
         loss = dataset_log_loss(g, w, X, Y)
-        if (num_iter < 10) || (j % int(num_iter / 10) == 1)
-            @printf("Iteration %i (loss %4f)\n", j, loss)
+        if (j % int(num_iter / 10) == 1)
+            @printf("Epoch %i (loss %4f)\n", j, loss)
         end
 
+        for i in 1:size(Y, 1)
             y = Y[i,:][:]
             if length(y) == 1
                 train_samples!(g, w, X[i,:], y[1], j)
@@ -62,11 +62,13 @@ BY = [1.0, 1.0, 0.0, 0.0]
 dimensions = size(BX, 2)
 
 # Binary LR SGD
+@printf("Binary LR SGD\n")
 bweights = randn(dimensions)
 blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
 learn(blrsgd, BX, BY, bweights, 100)
 
 # Binary LR AdaGrad
+@printf("Binary LR Adagrad\n")
 bweights = randn(dimensions)
 blrada = BinaryLogisticRegressionAdaGrad{Float64}(zeros(Float64, dimensions), 1.0, ones(Float64, dimensions))
 learn(blrada, BX, BY, bweights, 20)
@@ -83,11 +85,13 @@ dimensions = size(MX, 2)
 nlabels = size(MY, 2)
 
 # Multilabel LR SGD
+@printf("Multilabel LR SGD\n")
 mweights = randn(dimensions * nlabels)
 mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0)
 learn(mlrsgd, MX, MY, mweights, 100)
 
 # Multilabel LR AdaGrad
+@printf("Multilabel LR AdaGrad\n")
 mweights = randn(dimensions * nlabels)
 mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)))
 learn(mlrada, MX, MY, mweights, 100)
@@ -100,34 +104,49 @@ import NeuralNetworks: SLN_MLL,
                        calculate_label_probabilities, back_propagate!,
                        fill!, flat_weights
 
-type MultilabelSLNMLLSGD{T} <: StochasticGradientDescent{T}
+type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::Float64
     sln::SLN_MLL
 end
 
-function predict{T}(g::MultilabelSLNMLLSGD{T}, weights::Vector{T}, x::Vector{T})
+type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
+    scratch_gradient::Vector{T}
+    num_labels::Int
+    initial_learning_rate::Float64
+    sln::SLN_MLL
+    diagonal_sum_of_gradients::Vector{T}
+end
+
+typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
+
+function predict{T}(g::MultilabelSLN{T}, weights::Vector{T}, x::Vector{T})
     fill!(g.sln, weights)
     return calculate_label_probabilities(g.sln, x)
 end
 
-function calculate_gradient!(g::MultilabelSLNMLLSGD{Float64}, weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
+function calculate_gradient!(g::MultilabelSLN{Float64}, weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
     fill!(g.sln, weights)
     derivatives = back_propagate!(g.sln, x, y)
-    println("Derivatives: $derivatives")
-    gradient = flat_weights(derivatives)
-    @printf("gradient: %s:", gradient')
+    gradient = flat_weights(derivatives) 
     g.scratch_gradient = gradient
 end
 
-function num_labels{T}(g::MultilabelSLNMLLSGD{T})
+function num_labels{T}(g::MultilabelSLN{T})
     return g.num_labels
 end
 
+@printf("SLN MLL SGD\n")
 sln = SLN_MLL(dimensions, nlabels, 2)
 mweights = flat_weights(sln)
-slnmllsgd = MultilabelSLNMLLSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
-learn(slnmllsgd, MX, MY, mweights, 5)
+slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
+learn(slnmllsgd, MX, MY, mweights, 100)
 
+
+@printf("SLN MLL AdaGrad\n")
+sln = SLN_MLL(dimensions, nlabels, 2)
+mweights = flat_weights(sln)
+slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)))
+learn(slnmllada, MX, MY, mweights, 100)
 
