@@ -1,4 +1,4 @@
-import NeuralNetworks: SLN_MLL,
+import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        calculate_label_probabilities, back_propagate!,
                        fill!, flat_weights
 
@@ -10,6 +10,9 @@ type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     num_labels::Int
     initial_learning_rate::Float64
     sln::SLN_MLL
+    activation::SLN_MLL_Activation
+    deltas::SLN_MLL_Deltas
+    derivatives::SLN_MLL_Derivatives
 end
 
 type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
@@ -18,6 +21,9 @@ type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
     initial_learning_rate::Float64
     sln::SLN_MLL
     diagonal_sum_of_gradients::Vector{T}
+    activation::SLN_MLL_Activation                                                                                     
+    deltas::SLN_MLL_Deltas                                                                                             
+    derivatives::SLN_MLL_Derivatives 
 end
 
 typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
@@ -29,8 +35,9 @@ end
 
 function calculate_gradient!(g::MultilabelSLN{Float64}, weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
     fill!(g.sln, weights)
-    derivatives = back_propagate!(g.sln, x, y)
-    gradient = flat_weights(derivatives) 
+    
+    back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, x, y)
+    gradient = flat_weights(g.derivatives) 
     g.scratch_gradient = gradient
 end
 

@@ -97,11 +97,16 @@ end
 function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sample)
     @assert length(x) == num_dimensions(sln)
     activation.hidden = relu(x' * sln.input_hidden)[:]
-    skip_input = (x' * sln.input_output)[:]
-    hidden_input = (activation.hidden' * sln.hidden_output)[:]
-    activation.output =  hidden_input .+ skip_input
+    @assert assert_not_NaN(activation.hidden)
+    activation_input_out = (x' * sln.input_output)[:]
+    @assert assert_not_NaN(sln.hidden_output)
+    activation_hidden_out = (activation.hidden' * sln.hidden_output)[:]
+    activation.output =  activation_hidden_out .+ activation_input_out
+    @assert assert_not_NaN(activation_input_out)
+    @assert assert_not_NaN(activation_hidden_out)
     @assert length(activation.output) == num_labels(sln)
-    return activation
+    @assert assert_not_NaN(activation.output)
+    #return activation
 end
 
 function calculate_label_probabilities(sln::SLN_MLL, x::Sample)
@@ -114,19 +119,19 @@ end
 # Training
 #####################################
 
-function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
+function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, x::Sample, y::Labels)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
-    activation = SLN_MLL_Activation(sln)
+    #activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, x)
     probabilities = sigmoid(activation.output)[:]
     @assert assert_not_NaN(activation)
 
-    deltas = SLN_MLL_Deltas(sln)
+    #deltas = SLN_MLL_Deltas(sln)
     for i=1:length(y)
         deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
 	if isequal(deltas.output[i], NaN)
@@ -144,11 +149,11 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
 
     @assert assert_not_NaN(deltas)
 
-    derivatives = SLN_MLL_Derivatives(sln)
+    #derivatives = SLN_MLL_Derivatives(sln)
     @assert assert_not_NaN(derivatives)
     calculate_derivatives!(sln, activation, derivatives, deltas, x)
     @assert assert_not_NaN(derivatives)
-    return derivatives
+    #return derivatives
 end
 
 
