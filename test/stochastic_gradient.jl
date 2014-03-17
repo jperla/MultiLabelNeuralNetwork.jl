@@ -1,6 +1,7 @@
 using Base.Test
 
 import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD,
+                           BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
                            predict, train_samples!, calculate_gradient!
 import NeuralNetworks: log_loss
 
@@ -10,6 +11,14 @@ end
 
 function num_labels{T}(g::BinaryLogisticRegressionSGD{T})
     return 1
+end
+
+function num_labels{T}(g::BinaryLogisticRegressionAdaGrad{T})
+    return 1
+end
+
+function num_labels{T}(g::MultilabelLogisticRegressionAdaGrad{T})
+    return g.num_labels
 end
 
 function dataset_log_loss(g, w, X, Y)
@@ -42,26 +51,44 @@ function learn(g, X, Y, w, num_iter=100)
 end
 
 
+##############################################################
 # Test Binary LR SGD
+##############################################################
+
+# Binary Data
 BX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1]
 BY = [1.0, 1.0, 0.0, 0.0]
-
 @assert size(BX, 1) == length(BY)
-
 dimensions = size(BX, 2)
+
+# Binary LR SGD
 bweights = randn(dimensions)
 blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
-
 learn(blrsgd, BX, BY, bweights, 100)
 
+# Binary LR AdaGrad
+bweights = randn(dimensions)
+blrada = BinaryLogisticRegressionAdaGrad{Float64}(zeros(Float64, dimensions), 1.0, ones(Float64, dimensions))
+learn(blrada, BX, BY, bweights, 20)
+
+##############################################################
+#  Multilabel
+##############################################################
+
+# Multilabel Data
 MX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1; 1 1 1 1; 1 1 1 1]
 MY = [1.0 0.0  ; 1.0 0.0; 0.0 1.0; 0.0 1.0; 1.0 1.0; 1.0 1.0]
-
 @assert size(MX, 1) == size(MY, 1)
-
 dimensions = size(MX, 2)
 nlabels = size(MY, 2)
+
+# Multilabel LR SGD
 mweights = randn(dimensions * nlabels)
 mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0)
-
 learn(mlrsgd, MX, MY, mweights, 100)
+
+# Multilabel LR AdaGrad
+mweights = randn(dimensions * nlabels)
+mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)))
+learn(mlrada, MX, MY, mweights, 100)
+
