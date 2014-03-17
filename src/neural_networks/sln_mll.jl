@@ -12,19 +12,19 @@ type SLN_MLL <: NeuralNetworkStorage
     input_output::Weights # skip-level weights direction from input to outputs
 end
 
-type SLN_MLL_Activation
+type SLN_MLL_Activation <: NeuralNetworkStorage
     # single layer neural network activation levels after being trained on input
     hidden::Activations
     output::Activations
 end
 
 
-type SLN_MLL_Deltas
+type SLN_MLL_Deltas <: NeuralNetworkStorage
     hidden::Array{Float64}
     output::Array{Float64}
 end
 
-type SLN_MLL_Derivatives
+type SLN_MLL_Derivatives <: NeuralNetworkStorage
     input_hidden::Array{Float64,2} # derivatives of weights to calculate hidden layer
     hidden_output::Array{Float64,2} # derivatives of weights to the final layer
     input_output::Array{Float64,2} # skip-level weights direction from input to outputs
@@ -124,6 +124,7 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, x)
     probabilities = sigmoid(activation.output)[:]
+    @assert assert_not_NaN(activation)
 
     deltas = SLN_MLL_Deltas(sln)
     for i=1:length(y)
@@ -135,9 +136,11 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
             deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
         end
     end
+    @assert assert_not_NaN(deltas)
 
     derivatives = SLN_MLL_Derivatives(sln)
     calculate_derivatives!(sln, activation, derivatives, deltas, x)
+    @assert assert_not_NaN(derivatives)
     return derivatives
 end
 

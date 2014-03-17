@@ -12,6 +12,7 @@ export SLN_MLL, SLN_MLL_Activation,
        zero!, gradientm,
        top_features, top_weights,
        hidden_nodes_table,
+       assert_not_NaN,
        fill!, flat_weights, read_data
 
 include("neural_networks/sln_mll.jl")

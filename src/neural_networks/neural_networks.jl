@@ -11,6 +11,22 @@ function zero!(nn::NeuralNetworkStorage)
     end
 end
 
+function assert_not_NaN(nn::NeuralNetworkStorage)
+    # Asserts none of the weights are NaN
+    fields = names(nn)
+    types = typeof(nn).types
+    for (t,f) in zip(types, fields)
+        if t <: Weights
+            for i in 1:length(nn.(f))
+                if isequal(NaN, nn.(f)[i])
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
+
 #####################################
 # Vectorized Link functions
 #####################################

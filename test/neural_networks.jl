@@ -3,10 +3,16 @@ using Base.Test
 import Calculus: check_gradient
 
 import NeuralNetworks: SLN_MLL, forward_propagate!, back_propagate!,
-                       fill!, flat_weights,
+                       fill!, flat_weights, assert_not_NaN,
                        gradient, calculate_label_probabilities, log_loss, square_loss, read_data
 
 sln = SLN_MLL(10, 3, 2)
+
+@test assert_not_NaN(sln)
+x = sln.input_output[1]
+sln.input_output[1] = NaN
+@test !assert_not_NaN(sln)
+sln.input_output[1] = x
 
 # test weights flattening/filling/reading/writing
 flat1 = flat_weights(sln)
@@ -62,3 +68,4 @@ features, labels = read_data("scene", "train")
 
 @test 0 < log_loss(1.0,.9999) < .1
 @test square_loss(0.0, 0.0) == 0
+
