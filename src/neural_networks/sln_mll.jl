@@ -79,7 +79,7 @@ function fill!(sln::SLN_MLL, weights::Vector{Weight})
     sln.hidden_output[1:end] = weights[io+ih+1:end]
 end
 
-function flat_weights(sln::SLN_MLL)
+function flat_weights(sln::Union(SLN_MLL, SLN_MLL_Derivatives))
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)

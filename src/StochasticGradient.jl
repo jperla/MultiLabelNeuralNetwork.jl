@@ -2,7 +2,7 @@ module StochasticGradient
 
 importall Base
 
-export BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD,
+export BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD, StochasticGradientDescent,
        BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
        predict, train_samples!, calculate_gradient!
 
