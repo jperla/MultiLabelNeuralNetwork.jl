@@ -129,6 +129,11 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
     deltas = SLN_MLL_Deltas(sln)
     for i=1:length(y)
         deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
+	if isequal(deltas.output[i], NaN)
+	    logresult = log_loss_prime(y[i],probabilities[i])
+	    sigresult = sigmoid_prime(activation.output[i]) 
+	    println("NaN spotted: Delta of output #$i, logprim:$logresult, sigprime:$sigresult")
+	end
     end
 
     for i = 1:length(deltas.hidden)
@@ -136,9 +141,11 @@ function back_propagate!(sln::SLN_MLL, x::Sample, y::Labels)
             deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
         end
     end
+
     @assert assert_not_NaN(deltas)
 
     derivatives = SLN_MLL_Derivatives(sln)
+    @assert assert_not_NaN(derivatives)
     calculate_derivatives!(sln, activation, derivatives, deltas, x)
     @assert assert_not_NaN(derivatives)
     return derivatives
@@ -149,11 +156,21 @@ function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, de
     ############################################################
     #  calculate derivatives for weights from input to hidden layer
     ############################################################
+
+    @assert length(deltas.hidden) == size(derivatives.input_hidden, 2)
     for i = 1:size(derivatives.input_hidden, 1)
         for j = 1:size(derivatives.input_hidden, 2)
             derivatives.input_hidden[i,j] = deltas.hidden[j] * x[i]
+ 	    if isequal(derivatives.input_hidden[i,j], NaN)
+		deltaj = deltas.hidden[j]
+	        println("NaN Spotted: i: $i, j: $j, x[i] = $x[i], deltas.hidden: $deltaj")
+	    end
         end
     end
+
+    @assert assert_not_NaN(x)
+    
+    @assert assert_not_NaN(derivatives)
 
     for i = 1:size(derivatives.hidden_output, 1)
         for j = 1:size(derivatives.hidden_output, 2)

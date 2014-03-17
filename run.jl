@@ -1,5 +1,5 @@
 import StochasticGradient: train_samples!
-import NeuralNetworks: read_data, flat_weights, SLN_MLL, log_loss
+import NeuralNetworks: read_data, flat_weights, SLN_MLL, log_loss, assert_not_NaN
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, predict, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
 
@@ -13,6 +13,10 @@ function dataset_log_loss(g, w, X, Y)
         y_hat[i,:] = predict(g, w, X[i,:][:])
     end
     loss = log_loss(Y, y_hat)
+
+    @assert assert_not_NaN(y_hat)
+    @assert assert_not_NaN(Y)
+
     if size(Y, 2) > 1
         micro_f1 = micro_f1_calculate(y_hat, Y)
         accuracy = accuracy_calculate(y_hat, Y)
@@ -61,14 +65,14 @@ sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
 mweights = flat_weights(sln)
 slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 0.01, sln)
 
-nepochs = 1000
+nepochs = 200
 
 @time learn(slnmllsgd, mweights, emotions_train_features, emotions_train_labels, epochs=nepochs, modn=1)
 
 @printf("SLN MLL AdaGrad\n")
 sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
 mweights = flat_weights(sln)
-slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 0.1, sln, ones(Float64, length(mweights)))
+slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, .1, sln, ones(Float64, length(mweights)))
 
 @time learn(slnmllada, mweights, emotions_train_features, emotions_train_labels, epochs=nepochs, modn=1)
 

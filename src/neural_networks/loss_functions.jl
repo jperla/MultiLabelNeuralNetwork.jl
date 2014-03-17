@@ -3,8 +3,19 @@
 ######################################################
 #  Log loss for a single example
 ######################################################
+epsilon = 1e-5
+
 function log_loss(y::Float64, y_hat::Float64)
-    return -(y * log(y_hat) + (1 - y) * log(1 - y_hat))
+    if y == y_hat
+        return 0.0
+    else
+        if y_hat <= 0.0
+           y_hat = epsilon
+        elseif y_hat >= 1.0
+           y_hat = 1.0 - epsilon
+        end
+        return -(y * log(y_hat) + (1 - y) * log(1 - y_hat))
+    end
 end
 
 ######################################################
@@ -22,7 +33,17 @@ end
 
 
 function log_loss_prime(y::Float64, y_hat::Float64)
-    return (y/y_hat + (y-1)/(1-y_hat))
+    if y == y_hat
+	return 0.0
+    else         
+	ll = (y/y_hat + (y-1)/(1-y_hat))
+	if ll > 10000
+	    ll = 10000
+	elseif ll < -10000
+	    ll = -10000
+	end
+    end
+    return ll
 end
 
 

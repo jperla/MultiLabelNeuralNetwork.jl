@@ -1,3 +1,5 @@
+
+
 abstract GradientScratch{T}
 # GradientScratch should have the following field:
 #   scratch_gradient::Vector{T}
@@ -24,6 +26,7 @@ function learning_rate{T}(g::StochasticGradientDescent{T}, i::Int, t::Int)
 end
 
 function learning_rate{T}(g::AdaGrad{T}, i::Int, t::Int)
+    @assert (assert_not_NaN(g.diagonal_sum_of_gradients))
     return g.initial_learning_rate / sqrt(g.diagonal_sum_of_gradients[i])
 end
 

@@ -16,12 +16,29 @@ function assert_not_NaN(nn::NeuralNetworkStorage)
     fields = names(nn)
     types = typeof(nn).types
     for (t,f) in zip(types, fields)
-        if t <: Weights
+        if t <: Array{Float64}
             for i in 1:length(nn.(f))
                 if isequal(NaN, nn.(f)[i])
                     return false
                 end
             end
+        end
+    end
+    return true
+end
+
+function assert_not_NaN(x::Float64)
+    if isequal(x,NaN)
+	return false
+    else
+	return true
+    end
+end
+
+function assert_not_NaN(input::Array{Float64})
+    for i in 1:length(input)
+        if isequal(input[i], NaN) 
+	    return false
         end
     end
     return true
@@ -34,11 +51,11 @@ end
 relu(x) = max(0, x) # rectified linear units
 @vectorize_1arg Number relu
 
-sigmoid(x) = 1.0 / (1.0 + e^(-x))
+sigmoid(x) = (2.0 / (1.0 + e^(-x))) - 0.5
 @vectorize_1arg Number sigmoid
 
 function sigmoid_prime(x)
-    return sigmoid(x) * (1 - sigmoid(x))
+    return 2.0 * sigmoid(x) * (1 - sigmoid(x))
 end
 
 #####################################
