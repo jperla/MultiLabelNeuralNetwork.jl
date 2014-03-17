@@ -70,13 +70,13 @@ dimensions = size(BX, 2)
 @printf("Binary LR SGD\n")
 bweights = randn(dimensions)
 blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
-learn(blrsgd, BX, BY, bweights, 100)
+@time learn(blrsgd, BX, BY, bweights, 100)
 
 # Binary LR AdaGrad
 @printf("Binary LR Adagrad\n")
 bweights = randn(dimensions)
 blrada = BinaryLogisticRegressionAdaGrad{Float64}(zeros(Float64, dimensions), 1.0, ones(Float64, dimensions))
-learn(blrada, BX, BY, bweights, 20)
+@time learn(blrada, BX, BY, bweights, 20)
 
 ##############################################################
 #  Multilabel
@@ -93,13 +93,13 @@ nlabels = size(MY, 2)
 @printf("Multilabel LR SGD\n")
 mweights = randn(dimensions * nlabels)
 mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0)
-learn(mlrsgd, MX, MY, mweights, 100)
+@time learn(mlrsgd, MX, MY, mweights, 100)
 
 # Multilabel LR AdaGrad
 @printf("Multilabel LR AdaGrad\n")
 mweights = randn(dimensions * nlabels)
 mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)))
-learn(mlrada, MX, MY, mweights, 100)
+@time learn(mlrada, MX, MY, mweights, 100)
 
 ##############################################################
 #  Neural Network
@@ -109,11 +109,11 @@ learn(mlrada, MX, MY, mweights, 100)
 sln = SLN_MLL(dimensions, nlabels, 2)
 mweights = flat_weights(sln)
 slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
-learn(slnmllsgd, MX, MY, mweights, 100)
+@time learn(slnmllsgd, MX, MY, mweights, 100)
 
 @printf("SLN MLL AdaGrad\n")
 sln = SLN_MLL(dimensions, nlabels, 2)
 mweights = flat_weights(sln)
 slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)))
-learn(slnmllada, MX, MY, mweights, 100)
+@time learn(slnmllada, MX, MY, mweights, 100)
 
