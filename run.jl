@@ -1,7 +1,43 @@
+#!/usr/bin/env julia
+import ArgParse: ArgParseSettings, @add_arg_table, parse_args
+
 import StochasticGradient: train_samples!
-import NeuralNetworks: read_data, flat_weights, SLN_MLL, log_loss, assert_not_NaN
-import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, predict, calculate_gradient!
+import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
+                       read_data, flat_weights, 
+                       log_loss, assert_not_NaN
+import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, 
+                                predict, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
+
+
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        "dataset"
+            help = "dataset we want to use: emotions, scene, yeast"
+            arg_type = String
+            required = true
+        "hidden"
+            help = "the number of hidden nodes"
+            arg_type = Integer
+            required = true
+        "--eta0"
+            help = "the initial learning rate"
+            arg_type = FloatingPoint
+            default = 0.3
+        "--adagrad"
+            help = "the initial learning rate"
+            arg_type = Bool
+            default = false
+        "--epochs", "-e"
+            help = "Number of epochs to do"
+            arg_type = Integer
+            default = 100
+    end
+
+    return parse_args(s)
+end
 
 function num_labels(g)
     g.num_labels
@@ -42,37 +78,63 @@ function learn(g, w, X, Y; epochs=100, modn=10)
     end
 end
 
-function whiten{T<:Number}(m::Array{T, 2})
-    m = broadcast(-, m, mean(m, 1))
-    m = broadcast(/, m, std(m, 1))
-    return m
+function whiten{T<:Number}(a::Array{T, 2})
+    m = mean(a, 1)
+    a = broadcast(-, a, m)
+    s = std(a, 1)
+    a = broadcast(/, a, s)
+    return a, m, s
+end
+
+function whiten{T<:Number}(a::Array{T, 2}, m::Matrix{Float64}, s::Matrix{Float64})
+    a = broadcast(-, a, m)
+    a = broadcast(/, a, s)
+    return a
 end
 
 function prepend_intercept{T<:Number}(m::Array{T, 2})
     return hcat(ones(T, size(m, 1)), m)
 end
 
-emotions_train_features, emotions_train_labels = read_data("emotions", "train")
-emotions_train_features = whiten(emotions_train_features)
-emotions_train_features = prepend_intercept(emotions_train_features)
+parsed_args = parse_commandline()
+dataset = parsed_args["dataset"]
+nepochs = parsed_args["epochs"]
+hidden_nodes = parsed_args["hidden"]
+initial_learning_rate = parsed_args["eta0"]
+adagrad = parsed_args["adagrad"]
 
-dimensions = size(emotions_train_features, 2)
-nlabels = size(emotions_train_labels, 2)
-@assert size(emotions_train_labels, 1) == size(emotions_train_features, 1)
-hidden_nodes = 3
-@printf("SLN MLL SGD\n")
-sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
-mweights = flat_weights(sln)
-slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 0.01, sln)
+#########################
+# Read and cleanup data
+#########################
+train_features, train_labels = read_data(dataset, "train")
+train_features, train_mean, train_std = whiten(train_features)
+train_features = prepend_intercept(train_features)
 
-nepochs = 200
+test_features, test_labels = read_data(dataset, "test")
+test_features = whiten(test_features, train_mean, train_std)
+test_features = prepend_intercept(test_features)
 
-@time learn(slnmllsgd, mweights, emotions_train_features, emotions_train_labels, epochs=nepochs, modn=1)
+dimensions = size(train_features, 2)
+nlabels = size(train_labels, 2)
+@assert size(train_labels, 1) == size(train_features, 1)
 
-@printf("SLN MLL AdaGrad\n")
-sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
-mweights = flat_weights(sln)
-slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, .1, sln, ones(Float64, length(mweights)))
+#########################
+# Setup Data and Run
+#########################
 
-@time learn(slnmllada, mweights, emotions_train_features, emotions_train_labels, epochs=nepochs, modn=1)
+if adagrad
+    @printf("SLN MLL AdaGrad\n")
+    sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
+    mweights = flat_weights(sln)
+    slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, ones(Float64, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
+
+    @time learn(slnmllada, mweights, train_features, train_labels, epochs=nepochs, modn=1)
+else
+    @printf("SLN MLL SGD\n")
+    sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
+    mweights = flat_weights(sln)
+    slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
+
+    @time learn(slnmllsgd, mweights, train_features, train_labels, epochs=nepochs, modn=1)
+end
 
