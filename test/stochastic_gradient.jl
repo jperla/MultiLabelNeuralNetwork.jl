@@ -33,18 +33,23 @@ function dataset_log_loss(g, w, X, Y)
         y_hat[i,:] = predict(g, w, X[i,:][:])
     end
     loss = log_loss(Y, y_hat)
-    micro_f1 = micro_f1_calculate(y_hat, Y)
-    accuracy = accuracy_calculate(y_hat, Y)
-    return loss, micro-_f1, accuracy
+    if size(Y, 2) > 1
+        micro_f1 = micro_f1_calculate(y_hat, Y)
+        accuracy = accuracy_calculate(y_hat, Y)
+    else
+        micro_f1=accuracy=0
+    end
+    return loss, micro_f1, accuracy
 end
 
 function learn(g, X, Y, w, num_iter=100)
     loss = 1.0
     for j in 1:num_iter
+        
         loss, micro_f1, accuracy= dataset_log_loss(g, w, X, Y)
         if (j % int(num_iter / 10) == 1)
-            @printf("Epoch %i (loss %4f)\n", j, loss)
-	    @println("Micro_F1: $micro_f1,  Accuracy: $accuracy" )
+            @printf("Epoch %i (loss %4f)", j, loss)
+	    @printf("\t Micro_F1: %4f,  Accuracy: %4f \n", micro_f1, accuracy )
         end
 
         for i in 1:size(Y, 1)
