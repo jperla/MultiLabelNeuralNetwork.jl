@@ -1,5 +1,7 @@
 typealias Probability Float64
 
+import NeuralNetworks: zero_one_loss
+
 ################################################
 #
 #       Takes Multi-dimensional array of probabilities
@@ -7,6 +9,17 @@ typealias Probability Float64
 #       Calculates F1 and Accuracy
 #
 ################################################
+
+
+function zero_one_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+    predictions = accuracy_threshold(probabilities)
+    n = size(probabilities, 1)
+    sum = 0
+    for i=1:n
+        sum += zero_one_loss(probabilities[i,:][:], truth[i,:][:])
+    end
+    return sum / n
+end
 
 function micro_f1_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
     predictions = micro_f1_threshold(probabilities)

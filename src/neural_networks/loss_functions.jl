@@ -35,7 +35,7 @@ end
 function log_loss_prime(y::Float64, y_hat::Float64)
     if y == y_hat
 	return 0.0
-    else         
+    else
 	ll = (y/y_hat + (y-1)/(1-y_hat))
 	if ll > 10000
 	    ll = 10000
@@ -74,7 +74,19 @@ function zero_one_loss(y::Array{Float64}, y_hat::Array{Float64})
     for i = 1:n
         sum += zero_one_loss(y[i], y_hat[i])
     end
-    return 1/n * sum
+    if sum == 0
+        return 0
+    else
+        return 1
+    end
 end
+
+
+
+
+
+
+
+
 
 
