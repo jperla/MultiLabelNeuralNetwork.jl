@@ -25,11 +25,10 @@ function parse_commandline()
         "--eta0"
             help = "the initial learning rate"
             arg_type = FloatingPoint
-            default = 0.3
+            default = 0.01
         "--adagrad"
             help = "the initial learning rate"
-            arg_type = Bool
-            default = false
+            action = :store_true
         "--epochs", "-e"
             help = "Number of epochs to do"
             arg_type = Integer
