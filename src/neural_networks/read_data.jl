@@ -25,7 +25,7 @@ function read_data(x::String, mode::String)
     end
 
     path = joinpath("data", x, string(x, "-", suffix, ".csv"))
-    file = readdlm(path, ',')
+    file = readdlm(path, ',', Float64)
 
     n = size(file, 1)
     features = file[1:n, 1:num_features]

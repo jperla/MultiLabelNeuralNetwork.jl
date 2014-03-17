@@ -118,12 +118,15 @@ interval = parsed_args["interval"]
 # Read and cleanup data
 #########################
 train_features, train_labels = read_data(dataset, "train")
+println("Successfully read data, now whitening...")
 train_features, train_mean, train_std = whiten(train_features)
 train_features = prepend_intercept(train_features)
 
 test_features, test_labels = read_data(dataset, "test")
 test_features = whiten(test_features, train_mean, train_std)
 test_features = prepend_intercept(test_features)
+
+
 
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)
