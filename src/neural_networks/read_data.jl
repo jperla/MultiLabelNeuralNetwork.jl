@@ -11,6 +11,9 @@ function read_data(x::String, mode::String)
     elseif x == "emotions"
         num_features = 72
         num_labels = 6
+    elseif x == "reuters"
+	num_features = 18637
+	num_labels = 90
     else
         error("Unknown dataset")
     end

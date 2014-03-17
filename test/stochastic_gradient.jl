@@ -4,7 +4,7 @@ import Thresholds: micro_f1_calculate, macro_f1_calculate, accuracy_calculate
 import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD, StochasticGradientDescent,
                            BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
                            predict, train_samples!, calculate_gradient!
-import NeuralNetworks: log_loss, flat_weights, SLN_MLL
+import NeuralNetworks: log_loss, flat_weights!, SLN_MLL
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNSGD, MultilabelSLNAdaGrad
 
 function num_labels{T}(g::MultilabelLogisticRegressionSGD{T})
@@ -116,13 +116,13 @@ mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mwei
 
 @printf("SLN MLL SGD\n")
 sln = SLN_MLL(dimensions, nlabels, 2)
-mweights = flat_weights(sln)
+flat_weights!(sln, mweights)
 slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
 @time learn(slnmllsgd, MX, MY, mweights, 100)
 
 @printf("SLN MLL AdaGrad\n")
 sln = SLN_MLL(dimensions, nlabels, 2)
-mweights = flat_weights(sln)
+flat_weights!(sln, mweights)
 slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)))
 @time learn(slnmllada, MX, MY, mweights, 100)
 

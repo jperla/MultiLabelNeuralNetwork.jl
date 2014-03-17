@@ -79,15 +79,13 @@ function fill!(sln::SLN_MLL, weights::Vector{Weight})
     sln.hidden_output[1:end] = weights[io+ih+1:end]
 end
 
-function flat_weights(sln::Union(SLN_MLL, SLN_MLL_Derivatives))
+function flat_weights!(sln::Union(SLN_MLL, SLN_MLL_Derivatives), weights::Array{Weight})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
-    weights = ones(io + ih + ho)
     weights[1:io] = sln.input_output[1:end]
     weights[io+1:io+ih] = sln.input_hidden[1:end]
     weights[io+ih+1:end] = sln.hidden_output[1:end]
-    return weights
 end
 
 #####################################
@@ -99,14 +97,14 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sam
     activation.hidden = relu(x' * sln.input_hidden)[:]
     @assert assert_not_NaN(activation.hidden)
     activation_input_out = (x' * sln.input_output)[:]
-    @assert assert_not_NaN(sln.hidden_output)
+    #@assert assert_not_NaN(sln.hidden_output)
     activation_hidden_out = (activation.hidden' * sln.hidden_output)[:]
     activation.output =  activation_hidden_out .+ activation_input_out
     @assert assert_not_NaN(activation_input_out)
     @assert assert_not_NaN(activation_hidden_out)
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
-    #return activation
+   
 end
 
 function calculate_label_probabilities(sln::SLN_MLL, x::Sample)

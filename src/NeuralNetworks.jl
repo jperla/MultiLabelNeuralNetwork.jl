@@ -13,7 +13,7 @@ export SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
        top_features, top_weights,
        hidden_nodes_table,
        assert_not_NaN,
-       fill!, flat_weights, read_data
+       fill!, flat_weights!, read_data
 
 include("neural_networks/sln_mll.jl")
 include("neural_networks/neural_networks.jl")

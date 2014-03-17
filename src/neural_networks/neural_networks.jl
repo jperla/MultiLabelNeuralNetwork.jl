@@ -13,34 +13,34 @@ end
 
 function assert_not_NaN(nn::NeuralNetworkStorage)
     # Asserts none of the weights are NaN
-    fields = names(nn)
-    types = typeof(nn).types
-    for (t,f) in zip(types, fields)
-        if t <: Array{Float64}
-            for i in 1:length(nn.(f))
-                if isequal(NaN, nn.(f)[i])
-                    return false
-                end
-            end
-        end
-    end
+    #fields = names(nn)
+    #types = typeof(nn).types
+    #for (t,f) in zip(types, fields)
+    #    if t <: Array{Float64}
+    #        for i in 1:length(nn.(f))
+    #            if isequal(NaN, nn.(f)[i])
+    #                return false
+    #            end
+    #        end
+    #    end
+    #end
     return true
 end
 
 function assert_not_NaN(x::Float64)
-    if isequal(x,NaN)
-	return false
-    else
-	return true
-    end
+    #if isequal(x,NaN)
+    #	return false
+    #else
+    	return true
+    #end
 end
 
 function assert_not_NaN(input::Array{Float64})
-    for i in 1:length(input)
-        if isequal(input[i], NaN) 
-	    return false
-        end
-    end
+    #for i in 1:length(input)
+    #    if isequal(input[i], NaN) 
+    #	    return false
+    #    end
+    #end
     return true
 end
 

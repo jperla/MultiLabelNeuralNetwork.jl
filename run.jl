@@ -3,7 +3,7 @@ import ArgParse: ArgParseSettings, @add_arg_table, parse_args
 
 import StochasticGradient: train_samples!
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
-                       read_data, flat_weights, 
+                       read_data, flat_weights!,
                        log_loss, assert_not_NaN
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, 
                                 predict, calculate_gradient!
@@ -33,7 +33,15 @@ function parse_commandline()
             help = "Number of epochs to do"
             arg_type = Integer
             default = 100
-    end
+	"--regularization", "-r"
+	    help = "Regularization constant"
+	    arg_type = FloatingPoint
+            default = .01
+	"--interval", "-i"
+	    help = "How frequently to print progress"
+	    arg_type = Integer
+	    default = 1
+   end
 
     return parse_args(s)
 end
@@ -103,6 +111,8 @@ nepochs = parsed_args["epochs"]
 hidden_nodes = parsed_args["hidden"]
 initial_learning_rate = parsed_args["eta0"]
 adagrad = parsed_args["adagrad"]
+regularization_constant = parsed_args["regularization"]
+interval = parsed_args["interval"]
 
 #########################
 # Read and cleanup data
@@ -126,18 +136,17 @@ nlabels = size(train_labels, 2)
 if adagrad
     @printf("SLN MLL AdaGrad\n")
     sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
-    mweights = flat_weights(sln)
-    slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, ones(Float64, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
+    mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
+    flat_weights!(sln, mweights)
+    slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, ones(Float64, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
 
-    @time learn(slnmllada, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=1)
-
+    @time learn(slnmllada, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
 else
     @printf("SLN MLL SGD\n")
     sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
-    mweights = flat_weights(sln)
-    slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
+    mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
+    flat_weights!(sln, mweights)
+    slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
 
-    @time learn(slnmllsgd, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=1)
+    @time learn(slnmllsgd, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
 end
-
-
