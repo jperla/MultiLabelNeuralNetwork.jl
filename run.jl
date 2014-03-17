@@ -61,13 +61,15 @@ function dataset_log_loss(g, w, X, Y)
     return loss, micro_f1, accuracy    
 end
 
-function learn(g, w, X, Y; epochs=100, modn=10)
+function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
     loss = 1.0
     for e in 1:epochs
         loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y)
+	test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY)
         if ((modn == 1) || (e % modn == 1))
             @printf("Epoch %i (loss %4f): %s", e, loss, w[1:3]')
-            @printf("\t Micro_F1: %4f,  Accuracy: %4f \n", micro_f1, accuracy)
+            @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
+            @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
         end
 
         for i in 1:size(Y, 1)
@@ -127,13 +129,15 @@ if adagrad
     mweights = flat_weights(sln)
     slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, ones(Float64, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
-    @time learn(slnmllada, mweights, train_features, train_labels, epochs=nepochs, modn=1)
+    @time learn(slnmllada, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=1)
+
 else
     @printf("SLN MLL SGD\n")
     sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
     mweights = flat_weights(sln)
     slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
-    @time learn(slnmllsgd, mweights, train_features, train_labels, epochs=nepochs, modn=1)
+    @time learn(slnmllsgd, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=1)
 end
+
 
