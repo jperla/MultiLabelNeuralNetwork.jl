@@ -4,7 +4,6 @@ import NeuralNetworks: SLN_MLL, SLN_MLL_Activation,
                        forward_propagate!, calculate_label_probabilities, gradient, zero!,
                        top_features, top_weights, hidden_nodes_table,
                        sigmoid
-import CheckGrad: checkgrad, approximately_one
 
 num_dimensions = 10
 num_labels = 3
