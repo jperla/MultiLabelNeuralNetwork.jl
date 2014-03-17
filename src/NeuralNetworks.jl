@@ -6,7 +6,8 @@ importall Base
 
 
 export SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
-       forward_propagate!, calculate_label_probabilities,
+       VectorOrSubArrayVector,
+       forward_propagate!, calculate_label_probabilities!,
        back_propagate!, sigmoid_prime, square_loss, log_loss,
        log_loss_prime, sigmoid, relu,
        zero!, gradientm,

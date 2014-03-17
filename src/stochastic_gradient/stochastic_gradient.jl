@@ -26,7 +26,6 @@ function learning_rate{T}(g::StochasticGradientDescent{T}, i::Int, t::Int)
 end
 
 function learning_rate{T}(g::AdaGrad{T}, i::Int, t::Int)
-    @assert (assert_not_NaN(g.diagonal_sum_of_gradients))
     return g.initial_learning_rate / sqrt(g.diagonal_sum_of_gradients[i])
 end
 
@@ -54,7 +53,7 @@ end
 #############################################
 
 function regularization_constant(g)
-   return g.regularization_constant
+   return 0.0
 end
 
 function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
@@ -71,23 +70,25 @@ end
 # Training
 #############################################
 
-function calculate_gradient_and_update_weights!{T, Y}(g::GradientScratch{T}, weights::Vector{T}, x::Vector{T}, y::Y, t::Int)
-    calculate_gradient!(g, weights, x, y) # fill scratch gradient
+function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::Matrix{T}, Y::U, i::Int, t::Int)
+    @assert i <= size(X, 1)
+    calculate_gradient!(g, weights, X, Y, i) # fill scratch gradient
     save_gradient!(g)
     update_weights!(g, weights, t)
 end
 
-function train_samples!{T, Y}(gradient::GradientScratch{T},
+function train_samples!{T, U}(gradient::GradientScratch{T},
 			      weights::Vector{T},
-                              X::Matrix{T}, y::Y,
+                              X::Matrix{T}, Y::U,
+                              r::Range1,
                               t::Int # iteration number
                              )
     # Accepts one stochastic sample from the distribution, and updates the weight vector given gradient function.
     # Uses the scratch_gradient as a workspace to avoid memory allocation.
     # We assume that x already has an intercept term (constant 1) as the first value.
     @assert length(weights) == length_of_weight_updates(gradient)
-    for i in size(X, 1)
-        calculate_gradient_and_update_weights!(gradient, weights, X[i,:][:], y, t)
+    for i in r
+        calculate_gradient_and_update_weights!(gradient, weights, X, Y, i, t)
     end
 end
 
@@ -137,33 +138,59 @@ sigmoid(x) = 1.0 / (1.0 + e^(-x))
 typealias BinaryLogisticRegression{T} Union(BinaryLogisticRegressionSGD{T}, BinaryLogisticRegressionAdaGrad{T})
 typealias MultilabelLogisticRegression{T} Union(MultilabelLogisticRegressionSGD{T}, MultilabelLogisticRegressionAdaGrad{T})
 
-function predict{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, x::Vector{T})
-    return sigmoid(sum(weights .* x))
-end
-
-function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vector{Float64}, x::Vector{Float64}, y::Float64)
-    @assert length(weights) == length(x) == length(g.scratch_gradient)
-    g.scratch_gradient = (y - predict(g, weights, x)) .* x
-end
-
-function predict{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, x::Vector{T})
-    prediction = zeros(Float64, g.num_labels)
-    lx = length(x)
-    for i in 1:g.num_labels
-        r = (((i - 1) * lx) + 1):(((i - 1) * lx) + lx)
-        prediction[i] = sigmoid(sum(weights[r] .* x))
+function predict!{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::Vector{T}, i::Int)
+    y[i] = 0
+    for j in 1:length(weights)
+        y[i] += weights[j] * X[i,j]
     end
-    return prediction
+    y[i] = sigmoid(y[i])
+end
+
+function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vector{Float64}, X::Matrix{Float64}, Y::Vector{Float64}, i::Int)
+    @assert length(weights) == size(X, 2) == length(g.scratch_gradient)
+
+    # Use Y as scratch space to store prediction
+    true_yi = Y[i]
+    predict!(g, weights, X, Y, i)
+    predicted_yi = Y[i]
+
+    for j in 1:length(weights)
+        g.scratch_gradient[j] = (true_yi - predicted_yi) * X[i,j]
+    end
+    
+    # Ensure true labels Y do not change
+    Y[i] = true_yi
+end
+
+function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::Vector{T}, i::Int)
+    @assert length(weights) == (size(X, 2)  * length(y))
+    nf = size(X, 2)
+    for k in 1:g.num_labels
+        y[k] = 0.0
+        for j in 1:nf
+            nj = ((k - 1) * nf) + j
+            y[k] += weights[nj] * X[i, j]
+        end
+        y[k] = sigmoid(y[k])
+    end
 end
 
 function calculate_gradient!(g::MultilabelLogisticRegression{Float64}, 
-                             weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
-    @assert length(weights) == (length(x) * g.num_labels) == length(g.scratch_gradient)
-    lx = length(x)
-    for i in 1:g.num_labels
-        r = (((i - 1) * lx) + 1):(((i - 1) * lx) + lx)
-        hx = sigmoid(sum(weights[r] .* x))
-        g.scratch_gradient[r] = (y[i] - hx) .* x
+                             weights::Vector{Float64}, X::Matrix{Float64}, Y::Matrix{Float64}, i::Int)
+    @assert g.num_labels == size(Y, 2)
+    @assert length(weights) == (size(X, 2) * g.num_labels) == length(g.scratch_gradient)
+    nf = size(X, 2)
+    predicted = zeros(Float64, size(Y, 2))
+    predict!(g, weights, X, predicted, i)
+    fill!(g.scratch_gradient, -10.9)
+    for k in 1:g.num_labels
+        for j in 1:nf
+            nj = ((k - 1) * nf) + j
+            g.scratch_gradient[nj] = (Y[i, k] - predicted[k]) * X[i, j]
+        end
     end
+
+    # Always calculate a new gradient
+    @assert sum(g.scratch_gradient .== -10.9) == 0
 end
 

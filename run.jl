@@ -6,7 +6,7 @@ import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Deri
                        read_data, flat_weights!,
                        log_loss, assert_not_NaN
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, 
-                                predict, calculate_gradient!
+                                predict!, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
 
 
@@ -53,7 +53,7 @@ end
 function dataset_log_loss(g, w, X, Y)
     y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
     for i in 1:size(Y, 1)
-        y_hat[i,:] = predict(g, w, X[i,:][:])
+        predict!(g, w, X, y_hat, i)
     end
     loss = log_loss(Y, y_hat)
 
@@ -81,8 +81,7 @@ function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
         end
 
         for i in 1:size(Y, 1)
-            y = Y[i,:][:]
-            train_samples!(g, w, X[i,:], y, e)
+            train_samples!(g, w, X, Y, i:i, e)
         end
     end
 end

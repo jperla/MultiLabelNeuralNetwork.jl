@@ -3,8 +3,10 @@ using Base.Test
 import Thresholds: micro_f1_calculate, macro_f1_calculate, accuracy_calculate
 import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD, StochasticGradientDescent,
                            BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
-                           predict, train_samples!, calculate_gradient!
-import NeuralNetworks: log_loss, flat_weights!, SLN_MLL
+                           predict!, train_samples!, calculate_gradient!
+import NeuralNetworks: log_loss, flat_weights!, 
+                       SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives, 
+                       VectorOrSubArrayVector
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNSGD, MultilabelSLNAdaGrad
 
 function num_labels{T}(g::MultilabelLogisticRegressionSGD{T})
@@ -27,19 +29,26 @@ function num_labels{T}(g::MultilabelSLN{T})
     return g.num_labels
 end
 
-function dataset_log_loss(g, w, X, Y)
+function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
     y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
+    y_hat_row = zeros(Float64, num_labels(g))
     for i in 1:size(Y, 1)
-        y_hat[i,:] = predict(g, w, X[i,:][:])
+        predict!(g, w, X, y_hat_row, i)
+        y_hat[i,:] = y_hat_row
     end
     loss = log_loss(Y, y_hat)
-    if size(Y, 2) > 1
-        micro_f1 = micro_f1_calculate(y_hat, Y)
-        accuracy = accuracy_calculate(y_hat, Y)
-    else
-        micro_f1=accuracy=0
-    end
+    micro_f1 = micro_f1_calculate(y_hat, Y)
+    accuracy = accuracy_calculate(y_hat, Y)
     return loss, micro_f1, accuracy
+end
+
+function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Vector{T})
+    y_hat = zeros(Float64, size(Y, 1))
+    for i in 1:size(Y, 1)
+        predict!(g, w, X, y_hat, i)
+    end
+    loss = log_loss(Y, y_hat)
+    return loss, 0.0, 0.0
 end
 
 function learn(g, X, Y, w, num_iter=100)
@@ -53,12 +62,7 @@ function learn(g, X, Y, w, num_iter=100)
         end
 
         for i in 1:size(Y, 1)
-            y = Y[i,:][:]
-            if length(y) == 1
-                train_samples!(g, w, X[i,:], y[1], j)
-            else
-                train_samples!(g, w, X[i,:], y, j)
-            end
+            train_samples!(g, w, X, Y, i:i, j)
         end
     end
     @test loss < 0.05
@@ -114,15 +118,24 @@ mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mwei
 #  Neural Network
 ##############################################################
 
+num_hidden = 2
+
 @printf("SLN MLL SGD\n")
-sln = SLN_MLL(dimensions, nlabels, 2)
+sln = SLN_MLL(dimensions, nlabels, num_hidden)
+mweights = zeros(Float64, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
 flat_weights!(sln, mweights)
-slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
+activation = SLN_MLL_Activation(sln)
+deltas = SLN_MLL_Deltas(sln)
+derivatives = SLN_MLL_Derivatives(sln)
+slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, activation, deltas, derivatives, 0.0001)
 @time learn(slnmllsgd, MX, MY, mweights, 100)
 
 @printf("SLN MLL AdaGrad\n")
-sln = SLN_MLL(dimensions, nlabels, 2)
+sln = SLN_MLL(dimensions, nlabels, num_hidden)
+activation = SLN_MLL_Activation(sln)
+deltas = SLN_MLL_Deltas(sln)
+derivatives = SLN_MLL_Derivatives(sln)
 flat_weights!(sln, mweights)
-slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)))
+slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)), activation, deltas, derivatives, 0.0001)
 @time learn(slnmllada, MX, MY, mweights, 100)
 

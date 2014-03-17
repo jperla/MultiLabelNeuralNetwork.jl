@@ -92,114 +92,120 @@ end
 # Classification / Testing
 #####################################
 
-function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, x::Sample)
-    @assert length(x) == num_dimensions(sln)
-    activation.hidden = relu(x' * sln.input_hidden)[:]
+function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Matrix{Float64}, i::Int)
+    @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
+    h = 0.0
+    for k in 1:size(sln.input_hidden, 2)
+        for j in 1:size(X, 2)
+            try
+            h += X[i, j] * sln.input_hidden[j, k]
+                catch
+   @printf("i: %s j: %s k: %s X.size: %s, ih.size: %s", i, j, k, size(X), size(sln.input_hidden))
+   error("dkjf")
+end
+        end
+        activation.hidden[k] = relu(h)
+    end
     @assert assert_not_NaN(activation.hidden)
-    activation_input_out = (x' * sln.input_output)[:]
-    #@assert assert_not_NaN(sln.hidden_output)
-    activation_hidden_out = (activation.hidden' * sln.hidden_output)[:]
-    activation.output =  activation_hidden_out .+ activation_input_out
-    @assert assert_not_NaN(activation_input_out)
-    @assert assert_not_NaN(activation_hidden_out)
+ 
+    for k in 1:size(sln.input_output, 2)
+        h = 0.0
+        for j in 1:size(X, 2)
+            h += X[i, j] * sln.input_output[j, k]
+        end
+        activation.output[k] = h
+    end
+
+    @assert assert_not_NaN(sln.hidden_output)
+    for k in 1:size(sln.input_output, 2)
+        h = 0.0
+        for j in 1:length(activation.hidden)
+            h += X[i, j] * sln.hidden_output[j, k]
+        end
+        activation.output[k] += h
+    end
+
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
-   
 end
 
-function calculate_label_probabilities(sln::SLN_MLL, x::Sample)
+function calculate_label_probabilities!(sln::SLN_MLL, X::Matrix{Float64}, y_hat::VectorOrSubArrayVector{Float64}, i::Int)
     activation = SLN_MLL_Activation(sln)
-    forward_propagate!(sln, activation, x)
-    return sigmoid(activation.output)[:]
+    forward_propagate!(sln, activation, X, i)
+    @assert length(y_hat) == length(activation.output)
+    for j in 1:length(y_hat)
+        y_hat[j] = sigmoid(activation.output[j])
+    end
 end
 
 #####################################
 # Training
 #####################################
 
-function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, x::Sample, y::Labels)
+function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Matrix{Float64}, Y::Matrix{Float64}, i::Int)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
-    #activation = SLN_MLL_Activation(sln)
-    forward_propagate!(sln, activation, x)
-    probabilities = sigmoid(activation.output)[:]
+    forward_propagate!(sln, activation, X, i)
     @assert assert_not_NaN(activation)
 
-    #deltas = SLN_MLL_Deltas(sln)
-    for i=1:length(y)
-        deltas.output[i] = log_loss_prime(y[i],probabilities[i]) * sigmoid_prime(activation.output[i])
-	if isequal(deltas.output[i], NaN)
-	    logresult = log_loss_prime(y[i],probabilities[i])
-	    sigresult = sigmoid_prime(activation.output[i]) 
-	    println("NaN spotted: Delta of output #$i, logprim:$logresult, sigprime:$sigresult")
+    for j=1:size(Y, 2)
+        deltas.output[j] = log_loss_prime(Y[i,j], sigmoid(activation.output[j])) * sigmoid_prime(activation.output[j])
+	if isequal(deltas.output[j], NaN)
+	    logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
+	    sigresult = sigmoid_prime(activation.output[j])
+	    println("NaN spotted: Delta of output #$j, logprim:$logresult, sigprime:$sigresult")
 	end
     end
 
-    for i = 1:length(deltas.hidden)
+    for j = 1:length(deltas.hidden)
         for k = 1:length(activation.output)
-            deltas.hidden[i] += deltas.output[k] * sln.hidden_output[i,k]
+            deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
         end
     end
 
     @assert assert_not_NaN(deltas)
 
-    #derivatives = SLN_MLL_Derivatives(sln)
     @assert assert_not_NaN(derivatives)
-    calculate_derivatives!(sln, activation, derivatives, deltas, x)
+    calculate_derivatives!(sln, activation, derivatives, deltas, X, i)
     @assert assert_not_NaN(derivatives)
-    #return derivatives
 end
 
 
-function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, x::Sample)
+function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, X::Matrix{Float64}, i::Int)
     ############################################################
     #  calculate derivatives for weights from input to hidden layer
     ############################################################
 
     @assert length(deltas.hidden) == size(derivatives.input_hidden, 2)
-    for i = 1:size(derivatives.input_hidden, 1)
-        for j = 1:size(derivatives.input_hidden, 2)
-            derivatives.input_hidden[i,j] = deltas.hidden[j] * x[i]
- 	    if isequal(derivatives.input_hidden[i,j], NaN)
-		deltaj = deltas.hidden[j]
-	        println("NaN Spotted: i: $i, j: $j, x[i] = $x[i], deltas.hidden: $deltaj")
+    for j = 1:size(derivatives.input_hidden, 1)
+        for k = 1:size(derivatives.input_hidden, 2)
+            derivatives.input_hidden[j,k] = deltas.hidden[k] * X[i,j]
+ 	    if isequal(derivatives.input_hidden[j,k], NaN)
+		deltaj = deltas.hidden[k]
+	        println("NaN Spotted: i: $i, j: $j, X[i,j] = $X[i,j], deltas.hidden: $deltaj")
 	    end
         end
     end
 
-    @assert assert_not_NaN(x)
-    
     @assert assert_not_NaN(derivatives)
 
-    for i = 1:size(derivatives.hidden_output, 1)
-        for j = 1:size(derivatives.hidden_output, 2)
-            derivatives.hidden_output[i,j] = deltas.output[j] * activation.hidden[i]
+    for j = 1:size(derivatives.hidden_output, 1)
+        for k = 1:size(derivatives.hidden_output, 2)
+            derivatives.hidden_output[j,k] = deltas.output[k] * activation.hidden[j]
         end
     end
 
-    for i = 1:size(derivatives.input_output, 1)
-        for j = 1:size(derivatives.input_output, 2)
-            derivatives.input_output[i,j] = deltas.output[j] * x[i]
+    for j = 1:size(derivatives.input_output, 1)
+        for k = 1:size(derivatives.input_output, 2)
+            derivatives.input_output[j,k] = deltas.output[k] * X[i,j]
         end
     end
 
     return derivatives
-end
-
-
-function gradient(sln::SLN_MLL, x::Sample)
-    @assert num_dimensions(sln) == length(x)
-    g = zeros(num_labels(sln), num_dimensions(sln))
-
-    # TODO: calculate
-
-    # this needs to return a gradient for each output label, right?
-    @assert size(g) == (num_labels(sln), num_dimensions(sln))
-    return g
 end
 
 ###########################################
