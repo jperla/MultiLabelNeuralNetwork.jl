@@ -33,12 +33,12 @@ end
 function learn(g, X, Y, w, num_iter=100)
     loss = 1.0
     for j in 1:num_iter
+        for i in 1:size(Y, 1)
         loss = dataset_log_loss(g, w, X, Y)
-        if j % int(num_iter / 10) == 1
+        if (num_iter < 10) || (j % int(num_iter / 10) == 1)
             @printf("Iteration %i (loss %4f)\n", j, loss)
         end
 
-        for i in 1:size(Y, 1)
             y = Y[i,:][:]
             if length(y) == 1
                 train_samples!(g, w, X[i,:], y[1], j)
@@ -115,6 +115,7 @@ end
 function calculate_gradient!(g::MultilabelSLNMLLSGD{Float64}, weights::Vector{Float64}, x::Vector{Float64}, y::Vector{Float64})
     fill!(g.sln, weights)
     derivatives = back_propagate!(g.sln, x, y)
+    println("Derivatives: $derivatives")
     gradient = flat_weights(derivatives)
     @printf("gradient: %s:", gradient')
     g.scratch_gradient = gradient
@@ -127,6 +128,6 @@ end
 sln = SLN_MLL(dimensions, nlabels, 2)
 mweights = flat_weights(sln)
 slnmllsgd = MultilabelSLNMLLSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln)
-learn(slnmllsgd, MX, MY, mweights, 100)
+learn(slnmllsgd, MX, MY, mweights, 5)
 
 

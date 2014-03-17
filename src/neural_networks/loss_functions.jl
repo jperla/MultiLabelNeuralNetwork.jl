@@ -22,7 +22,7 @@ end
 
 
 function log_loss_prime(y::Float64, y_hat::Float64)
-    return -1 * (y/y_hat + (y-1)/(1-y_hat))
+    return (y/y_hat + (y-1)/(1-y_hat))
 end
 
 
