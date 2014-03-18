@@ -35,7 +35,7 @@ function assert_not_NaN(x::Array{Float64})
 end
 
 function assert_not_NaN(x::Float64)
-    if true || isequal(x, NaN)
+    if false || isequal(x, NaN)
     	return false
     else
     	return true
