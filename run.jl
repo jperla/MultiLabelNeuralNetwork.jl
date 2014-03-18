@@ -50,23 +50,24 @@ function num_labels(g)
     g.num_labels
 end
 
-function dataset_log_loss(g, w, X, Y)
+function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
     y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
+    for i in 1:size(Y, 1)
+        predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
+    end
+    loss = log_loss(Y, y_hat)
+    micro_f1 = micro_f1_calculate(y_hat, Y)
+    accuracy = accuracy_calculate(y_hat, Y)
+    return loss, micro_f1, accuracy
+end
+
+function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Vector{T})
+    y_hat = zeros(Float64, size(Y, 1))
     for i in 1:size(Y, 1)
         predict!(g, w, X, y_hat, i)
     end
     loss = log_loss(Y, y_hat)
-
-    @assert assert_not_NaN(y_hat)
-    @assert assert_not_NaN(Y)
-
-    if size(Y, 2) > 1
-        micro_f1 = micro_f1_calculate(y_hat, Y)
-        accuracy = accuracy_calculate(y_hat, Y)
-    else
-        micro_f1 = accuracy = 0
-    end                                                                                                                                
-    return loss, micro_f1, accuracy    
+    return loss, 0.0, 0.0
 end
 
 function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
