@@ -40,7 +40,7 @@ function parse_commandline()
 	"--interval", "-i"
 	    help = "How frequently to print progress"
 	    arg_type = Integer
-	    default = 1
+	    default = 1000
    end
 
     return parse_args(s)
@@ -50,38 +50,31 @@ function num_labels(g)
     g.num_labels
 end
 
-function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
-    y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
+function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T}, y_hat::Matrix{T})
     for i in 1:size(Y, 1)
         predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
     end
     loss = log_loss(Y, y_hat)
-    micro_f1 = micro_f1_calculate(y_hat, Y)
+    micro_f1 = 0.0 # micro_f1_calculate(y_hat, Y)
     accuracy = accuracy_calculate(y_hat, Y)
     return loss, micro_f1, accuracy
 end
 
-function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Vector{T})
-    y_hat = zeros(Float64, size(Y, 1))
-    for i in 1:size(Y, 1)
-        predict!(g, w, X, y_hat, i)
-    end
-    loss = log_loss(Y, y_hat)
-    return loss, 0.0, 0.0
-end
-
 function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
+    y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
+    test_y_hat = zeros(Float64, (size(testY, 1), num_labels(g)))
+
     loss = 1.0
     for e in 1:epochs
-        loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y)
-	test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY)
-        if ((modn == 1) || (e % modn == 1))
-            @printf("Epoch %i (loss %4f): %s", e, loss, w[1:3]')
-            @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
-            @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
-        end
-
-        for i in 1:size(Y, 1)
+        @printf("New epoch: %s", e)
+        @time for i in 1:size(Y, 1)
+            if ((modn == 1) || (i % modn == 1))
+                #@time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
+    	        @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
+                @printf("Epoch %i Iter %i (loss %4f): %s", e, i, loss, w[1:3]')
+                #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
+                @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
+            end
             train_samples!(g, w, X, Y, i:i, e)
         end
     end
@@ -131,8 +124,6 @@ train_features = prepend_intercept(train_features)
 test_features, test_labels = read_data(dataset, "test")
 test_features = whiten(test_features, train_mean, train_std)
 test_features = prepend_intercept(test_features)
-
-
 
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)
