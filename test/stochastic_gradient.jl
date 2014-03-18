@@ -5,8 +5,7 @@ import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegres
                            BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
                            predict!, train_samples!, calculate_gradient!
 import NeuralNetworks: log_loss, flat_weights!, 
-                       SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives, 
-                       VectorOrSubArrayVector
+                       SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNSGD, MultilabelSLNAdaGrad
 
 function num_labels{T}(g::MultilabelLogisticRegressionSGD{T})

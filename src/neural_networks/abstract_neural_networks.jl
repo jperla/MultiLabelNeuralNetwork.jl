@@ -1,6 +1,3 @@
-# Useful for efficient indexing
-typealias VectorOrSubArrayVector{T} Union(Vector{T}, SubArray{T})
-
 typealias Weight Float64
 typealias Weights Matrix{Weight}
 

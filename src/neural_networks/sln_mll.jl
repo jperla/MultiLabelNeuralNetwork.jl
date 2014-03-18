@@ -104,6 +104,7 @@ end
 # Classification / Testing
 #####################################
 
+
 function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Matrix{Float64}, i::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
@@ -137,20 +138,46 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Mat
     @assert assert_not_NaN(activation.output)
 end
 
-function calculate_label_probabilities!(sln::SLN_MLL, X::Matrix{Float64}, y_hat::VectorOrSubArrayVector{Float64}, i::Int)
+
+function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::SparseMatrixCSC{Float64,Int64}, i::Int)
+    @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
+
+    for k in 1:size(sln.input_hidden, 2)
+        h = X[i,:] * sln.input_hidden[:, k]
+        activation.hidden[k] = relu(h[1,1])
+    end
+    @assert assert_not_NaN(activation.hidden)
+
+    for k in 1:size(sln.input_output, 2)
+        h = X[i, :] * sln.input_output[:, k]
+        activation.output[k] = h[1,1]
+    end
+
+    @assert assert_not_NaN(sln.hidden_output)
+    for k in 1:size(sln.input_output, 2)
+        h = activation.hidden' * sln.hidden_output[:, k][:]
+        activation.output[k] += h[1,1]
+    end
+
+    @assert length(activation.output) == num_labels(sln)
+    @assert assert_not_NaN(activation.output)
+end
+
+function calculate_label_probabilities!(sln::SLN_MLL, X::AbstractMatrix{Float64}, y_hat::AbstractArray{Float64}, i::Int)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, X, i)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
         y_hat[j] = sigmoid(activation.output[j])
     end
+
 end
 
 #####################################
 # Training
 #####################################
-
-function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Matrix{Float64}, Y::Matrix{Float64}, i::Int)
+                                                                     
+function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::AbstractMatrix{Float64}, Y::AbstractMatrix{Float64}, i::Int)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
@@ -183,7 +210,7 @@ function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Matri
 end
 
 
-function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, X::Matrix{Float64}, i::Int)
+function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, X::AbstractMatrix{Float64}, i::Int)
     ############################################################
     #  calculate derivatives for weights from input to hidden layer
     ############################################################

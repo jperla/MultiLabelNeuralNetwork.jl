@@ -17,6 +17,8 @@ input_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
 # All zero weights
 x1 = ones((1, num_dimensions))
+
+x1 = sparse(x1)
 output_probabilities = zeros(Float64, 3)
 calculate_label_probabilities!(sln, x1, output_probabilities, 1)
 half = (0.5 .* ones(num_labels))
@@ -46,6 +48,14 @@ activation = SLN_MLL_Activation(sln)
 forward_propagate!(sln, activation, x1, 1)
 output_probabilities = zeros(Float64, 3)
 calculate_label_probabilities!(sln, x1, output_probabilities, 1)
+
+# Check that dense calculations are the same as sparse
+forward_propagate!(sln, activation, x1, 1)
+dense_probabilities = zeros(Float64, 3)
+calculate_label_probabilities!(sln, x1, dense_probabilities, 1)
+@test output_probabilities == dense_probabilities
+
+
 @test activation.hidden == [0.0; num_dimensions]
 @test sigmoid(activation.output) == output_probabilities
 @test output_probabilities[1:end] == [0.5, 1.5, 0.5]

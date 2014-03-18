@@ -50,7 +50,7 @@ function num_labels(g)
     g.num_labels
 end
 
-function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T}, y_hat::Matrix{T})
+function dataset_log_loss{T}(g, w::Vector{T}, X::AbstractMatrix{Float64}, Y::AbstractMatrix{T}, y_hat::AbstractMatrix{T})
     @printf("predict: ")
     @time for i in 1:size(Y, 1)
         predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
@@ -125,6 +125,10 @@ train_features = prepend_intercept(train_features)
 test_features, test_labels = read_data(dataset, "test")
 test_features = whiten(test_features, train_mean, train_std)
 test_features = prepend_intercept(test_features)
+
+# attemptong sparsification
+# train_features = sparse(train_features)
+# test_features = sparse(test_features)
 
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)

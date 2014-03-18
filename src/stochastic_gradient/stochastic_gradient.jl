@@ -1,5 +1,3 @@
-typealias VectorOrSubArrayVector{T} Union(Vector{T}, SubArray{T})
-
 abstract GradientScratch{T}
 # GradientScratch should have the following field:
 #   scratch_gradient::Vector{T}
@@ -70,7 +68,7 @@ end
 # Training
 #############################################
 
-function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::Matrix{T}, Y::U, i::Int, t::Int)
+function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{Float64}, Y::U, i::Int, t::Int)
     @assert i <= size(X, 1)
     calculate_gradient!(g, weights, X, Y, i) # fill scratch gradient
     save_gradient!(g)
@@ -79,7 +77,7 @@ end
 
 function train_samples!{T, U}(gradient::GradientScratch{T},
 			      weights::Vector{T},
-                              X::Matrix{T}, Y::U,
+                              X::AbstractMatrix{Float64}, Y::U,
                               r::Range1,
                               t::Int # iteration number
                              )
@@ -140,7 +138,7 @@ sigmoid(x) = 1.0 / (1.0 + e^(-x))
 typealias BinaryLogisticRegression{T} Union(BinaryLogisticRegressionSGD{T}, BinaryLogisticRegressionAdaGrad{T})
 typealias MultilabelLogisticRegression{T} Union(MultilabelLogisticRegressionSGD{T}, MultilabelLogisticRegressionAdaGrad{T})
 
-function predict!{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::Vector{T}, i::Int)
+function predict!{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, X::AbstractMatrix{Float64}, y::Vector{T}, i::Int)
     y[i] = 0
     for j in 1:length(weights)
         y[i] += weights[j] * X[i,j]
@@ -148,7 +146,7 @@ function predict!{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, X::Matr
     y[i] = sigmoid(y[i])
 end
 
-function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vector{Float64}, X::Matrix{Float64}, Y::Vector{Float64}, i::Int)
+function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vector{Float64}, X::AbstractMatrix{Float64}, Y::Vector{Float64}, i::Int)
     @assert length(weights) == size(X, 2) == length(g.scratch_gradient)
 
     # Use Y as scratch space to store prediction
@@ -164,7 +162,7 @@ function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vect
     Y[i] = true_yi
 end
 
-function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::VectorOrSubArrayVector{T}, i::Int)
+function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::AbstractMatrix{T}, y::AbstractArray{T}, i::Int)
     @assert length(weights) == (size(X, 2)  * length(y))
     nf = size(X, 2)
     for k in 1:g.num_labels
