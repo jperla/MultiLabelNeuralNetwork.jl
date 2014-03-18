@@ -31,6 +31,7 @@ flat_weights!(sln2, flat4)
 @test flat2 == flat4
 
 """
+#TODO: I may have broken backprop
 x0 = [1 0 0 1 0.5 1.0 0.0 1.0 0.0 1.0;]
 q(x) = (calculate_label_probabilities(sln, x)[1], gradient(sln, x)[1,:])
 
@@ -58,7 +59,7 @@ derivatives = back_propagate!(sln, x0, y)
 """
 
 # Cap log loss
-@test 100 < log_loss(1.0, 0.0) < Inf
+@test 20 < log_loss(1.0, 0.0) < Inf
 
 
 #@test log_loss(1.0,.99999999) == 0.0

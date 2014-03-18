@@ -3,7 +3,7 @@
 ######################################################
 #  Log loss for a single example
 ######################################################
-epsilon = 1e-5
+epsilon = 1e-9
 
 function log_loss(y::Float64, y_hat::Float64)
     if y == y_hat
