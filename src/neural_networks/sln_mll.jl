@@ -94,15 +94,11 @@ end
 
 function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Matrix{Float64}, i::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
-    h = 0.0
+
     for k in 1:size(sln.input_hidden, 2)
+        h = 0.0
         for j in 1:size(X, 2)
-            try
             h += X[i, j] * sln.input_hidden[j, k]
-                catch
-   @printf("i: %s j: %s k: %s X.size: %s, ih.size: %s", i, j, k, size(X), size(sln.input_hidden))
-   error("dkjf")
-end
         end
         activation.hidden[k] = relu(h)
     end
@@ -120,7 +116,7 @@ end
     for k in 1:size(sln.input_output, 2)
         h = 0.0
         for j in 1:length(activation.hidden)
-            h += X[i, j] * sln.hidden_output[j, k]
+            h += activation.hidden[j] * sln.hidden_output[j, k]
         end
         activation.output[k] += h
     end
