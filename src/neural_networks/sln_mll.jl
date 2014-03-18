@@ -103,7 +103,7 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Mat
         activation.hidden[k] = relu(h)
     end
     @assert assert_not_NaN(activation.hidden)
- 
+
     for k in 1:size(sln.input_output, 2)
         h = 0.0
         for j in 1:size(X, 2)
@@ -153,7 +153,7 @@ function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Matri
 	if isequal(deltas.output[j], NaN)
 	    logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
 	    sigresult = sigmoid_prime(activation.output[j])
-	    println("NaN spotted: Delta of output #$j, logprim:$logresult, sigprime:$sigresult")
+	    println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
 	end
     end
 
