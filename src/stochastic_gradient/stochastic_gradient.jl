@@ -1,4 +1,4 @@
-
+typealias VectorOrSubArrayVector{T} Union(Vector{T}, SubArray{T})
 
 abstract GradientScratch{T}
 # GradientScratch should have the following field:
@@ -109,8 +109,9 @@ type MultilabelLogisticRegressionSGD{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::Float64
+    predicted::Vector{Float64}
 end
-MultilabelLogisticRegressionSGD(dims::Int, num_labels::Int, eta0::Float64) = MultilabelLogisticRegressionSGD{T}(zeros(dims, T), num_labels, eta0)
+MultilabelLogisticRegressionSGD(dims::Int, num_labels::Int, eta0::Float64) = MultilabelLogisticRegressionSGD{T}(zeros(dims, T), num_labels, eta0, zeros(Float64, num_labels))
 
 ## AdaGrad Binary LR
 
@@ -128,8 +129,9 @@ type MultilabelLogisticRegressionAdaGrad{T} <: AdaGrad{T}
     num_labels::Int
     initial_learning_rate::Float64
     diagonal_sum_of_gradients::Vector{T}
+    predicted::Vector{Float64}
 end
-MultilabelLogisticRegressionAdaGrad(dims::Int, num_labels::Int, eta0::Float64) = MultilabelLogisticRegressionSGD{T}(zeros(T,dims), num_labels, eta0, zeros(T, dims))
+MultilabelLogisticRegressionAdaGrad(dims::Int, num_labels::Int, eta0::Float64) = MultilabelLogisticRegressionSGD{T}(zeros(T,dims), num_labels, eta0, zeros(T, dims), zeros(Float64, num_labels))
 
 ## Binary and multilabel gradients/predictions
 
@@ -162,7 +164,7 @@ function calculate_gradient!(g::BinaryLogisticRegression{Float64}, weights::Vect
     Y[i] = true_yi
 end
 
-function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::Vector{T}, i::Int)
+function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::Matrix{T}, y::VectorOrSubArrayVector{T}, i::Int)
     @assert length(weights) == (size(X, 2)  * length(y))
     nf = size(X, 2)
     for k in 1:g.num_labels
@@ -180,13 +182,12 @@ function calculate_gradient!(g::MultilabelLogisticRegression{Float64},
     @assert g.num_labels == size(Y, 2)
     @assert length(weights) == (size(X, 2) * g.num_labels) == length(g.scratch_gradient)
     nf = size(X, 2)
-    predicted = zeros(Float64, size(Y, 2))
-    predict!(g, weights, X, predicted, i)
+    predict!(g, weights, X, g.predicted, i)
     fill!(g.scratch_gradient, -10.9)
     for k in 1:g.num_labels
         for j in 1:nf
             nj = ((k - 1) * nf) + j
-            g.scratch_gradient[nj] = (Y[i, k] - predicted[k]) * X[i, j]
+            g.scratch_gradient[nj] = (Y[i, k] - g.predicted[k]) * X[i, j]
         end
     end
 

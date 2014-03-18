@@ -31,10 +31,8 @@ end
 
 function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
     y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
-    y_hat_row = zeros(Float64, num_labels(g))
     for i in 1:size(Y, 1)
-        predict!(g, w, X, y_hat_row, i)
-        y_hat[i,:] = y_hat_row
+        predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
     end
     loss = log_loss(Y, y_hat)
     micro_f1 = micro_f1_calculate(y_hat, Y)
@@ -105,13 +103,13 @@ nlabels = size(MY, 2)
 # Multilabel LR SGD
 @printf("Multilabel LR SGD\n")
 mweights = randn(dimensions * nlabels)
-mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0)
+mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, zeros(Float64, nlabels))
 @time learn(mlrsgd, MX, MY, mweights, 100)
 
 # Multilabel LR AdaGrad
 @printf("Multilabel LR AdaGrad\n")
 mweights = randn(dimensions * nlabels)
-mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)))
+mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)), zeros(Float64, nlabels))
 @time learn(mlrada, MX, MY, mweights, 100)
 
 ##############################################################
