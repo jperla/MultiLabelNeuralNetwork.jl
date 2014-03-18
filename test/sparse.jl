@@ -4,7 +4,7 @@ using Base.Test
 # Efficient Sparse Column Iterator
 ####################################
 
-immutable NonzeroSparseColumnIter{Tv, Ti}
+immutable NonzeroSparseColumnIter{Tv, Ti<:Integer}
     s::SparseMatrixCSC{Tv, Ti}
     col::Int
     start::Int
@@ -12,23 +12,22 @@ immutable NonzeroSparseColumnIter{Tv, Ti}
 end
 
 nonzero(s::SparseMatrixCSC, col::Int) = NonzeroSparseColumnIter(s, col, s.colptr[col], s.colptr[col+1] - 1)
-Base.start(it::NonzeroSparseColumnIter) = it.start
-Base.next(it::NonzeroSparseColumnIter, k::Int64) = ((it.s.rowval[k], it.col, it.s.nzval[k]), k+1)
-#Base.next{Ti, Tv}(it::NonzeroSparseColumnIter{Ti, Tv}, k::Ti) = ((it.s.rowval[k], it.col, it.s.nzval[k]), k+1)
-Base.done(it::NonzeroSparseColumnIter, k::Int) = k > it.stop
+Base.start{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}) = it.start
+Base.next{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}, k::Int) = ((it.s.rowval[k], it.col, it.s.nzval[k]), k+1)
+Base.done{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}, k::Int) = k > it.stop
 Base.length(it::NonzeroSparseColumnIter) = it.stop - it.start + 1
 
 ####################################
 # Efficient Sparse Matrix Iterator
 ####################################
 
-immutable NonzeroSparseMatrixCSCIter{Tv, Ti}
+immutable NonzeroSparseMatrixCSCIter{Tv, Ti<:Integer}
     s::SparseMatrixCSC{Tv, Ti}
 end
 
 # todo: types
 nonzero(s::SparseMatrixCSC) = NonzeroSparseMatrixCSCIter(s)
-function Base.start(it::NonzeroSparseMatrixCSCIter)
+function Base.start{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti})
     col = 1
     k = it.s.colptr[col]
     while col <= it.s.n && it.s.colptr[col+1] == k
@@ -37,9 +36,9 @@ function Base.start(it::NonzeroSparseMatrixCSCIter)
     k = it.s.colptr[col]
     return (col, k)
 end
-Base.done(it::NonzeroSparseMatrixCSCIter, state::(Int, Int)) = state[2] > length(it.s.rowval)
+Base.done{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti}, state::(Int, Int)) = state[2] > length(it.s.rowval)
 Base.length(it::NonzeroSparseMatrixCSCIter) = nfilled(it.s)
-function Base.next(it::NonzeroSparseMatrixCSCIter, state::(Int, Int))
+function Base.next{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti}, state::(Int, Int))
     col, k = state
     value = (it.s.rowval[k], col, it.s.nzval[k])
     if k < (it.s.colptr[col+1] - 1)
