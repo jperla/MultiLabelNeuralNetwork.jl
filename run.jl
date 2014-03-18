@@ -44,6 +44,10 @@ function parse_commandline()
 	    help = "How frequently to print progress"
 	    arg_type = Integer
 	    default = 1000
+        "--file_prefix", "-f"
+	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
+	    arg_type = String
+	    default = ""
    end
 
     return parse_args(s)
@@ -71,13 +75,23 @@ function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
 
     for e in 1:epochs
         @printf("New epoch: %s\n", e)
-        @time for i in 1:size(Y, 1)
+        @time for i in 1:size(X, 1)
             if ((modn == 1) || (i % modn == 1))
-                #@time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
-    	        @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
-                @printf("Epoch %i Iter %i (loss %4f): %s", e, i, test_loss, w[1:3]')
-                #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
-                @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
+                if savefile != ""
+                    f = open(savefile, "a")
+                    @printf(f, "Epoch %i Iter %i Weights", e, i)
+                    for j in 1:length(w)
+                        @printf(f, " %f", w[j])
+                    end
+                    @printf(f, "\n")
+                    close(f)
+                else
+                    #@time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
+    	            @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
+                    @printf("Epoch %i Iter %i (loss %4f): %s", e, i, test_loss, w[1:3]')
+                    #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
+                    @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
+                end
             end
             if showtime
                 @time train_samples!(g, w, X, Y, i:i, e)
@@ -122,6 +136,24 @@ regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
 showtime = parsed_args["time"]
 
+function flatten(s)
+    s = replace(s, " ", "_")
+    s = replace(s, ".", "_")
+    s = replace(s, "-", "_")
+    s = replace(s, ":", "_")
+    s = replace(s, "'", "_")
+    s = replace(s, "\"", "_")
+    s = replace(s, "/", "_")
+    s = replace(s, "\\", "_")
+    return s
+end
+
+file_prefix = parsed_args["file_prefix"]
+savefile = ""
+if file_prefix != ""
+    savefile = string(file_prefix, "_", flatten(join(ARGS, "_")))
+end
+
 #########################
 # Read and cleanup data
 #########################
@@ -134,7 +166,7 @@ test_features, test_labels = read_data(dataset, "test")
 test_features = whiten(test_features, train_mean, train_std)
 test_features = prepend_intercept(test_features)
 
-# attemptong sparsification
+# attempting sparsification
 # train_features = sparse(train_features)
 # test_features = sparse(test_features)
 
