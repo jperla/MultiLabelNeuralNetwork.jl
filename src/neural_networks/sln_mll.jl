@@ -74,18 +74,30 @@ function fill!(sln::SLN_MLL, weights::Vector{Weight})
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
     @assert (io + ih + ho) == length(weights)
-    sln.input_output[1:end] = weights[1:io]
-    sln.input_hidden[1:end] = weights[io+1:io+ih]
-    sln.hidden_output[1:end] = weights[io+ih+1:end]
+    for i in 1:io
+        sln.input_output[i] = weights[i]
+    end
+    for i in 1:ih
+        sln.input_hidden[i] = weights[io+i]
+    end
+    for i in 1:ho
+        sln.hidden_output[i] = weights[io+ih+i]
+    end
 end
 
 function flat_weights!(sln::Union(SLN_MLL, SLN_MLL_Derivatives), weights::Array{Weight})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
-    weights[1:io] = sln.input_output[1:end]
-    weights[io+1:io+ih] = sln.input_hidden[1:end]
-    weights[io+ih+1:end] = sln.hidden_output[1:end]
+    for i in 1:io
+        weights[i] = sln.input_output[i]
+    end
+    for i in 1:ih
+        weights[io+i] = sln.input_hidden[i]
+    end
+    for i in 1:ho
+        weights[io+ih+i] = sln.hidden_output[i]
+    end
 end
 
 #####################################
