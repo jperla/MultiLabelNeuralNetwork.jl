@@ -29,6 +29,9 @@ function parse_commandline()
         "--adagrad"
             help = "the initial learning rate"
             action = :store_true
+        "--time"
+            help = "measure timings"
+            action = :store_true
         "--epochs", "-e"
             help = "Number of epochs to do"
             arg_type = Integer
@@ -76,7 +79,11 @@ function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
                 #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
                 @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
             end
-            @time train_samples!(g, w, X, Y, i:i, e)
+            if showtime
+                @time train_samples!(g, w, X, Y, i:i, e)
+            else
+                train_samples!(g, w, X, Y, i:i, e)
+            end
         end
     end
 end
@@ -113,6 +120,7 @@ initial_learning_rate = parsed_args["eta0"]
 adagrad = parsed_args["adagrad"]
 regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
+showtime = parsed_args["time"]
 
 #########################
 # Read and cleanup data
