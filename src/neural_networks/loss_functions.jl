@@ -32,6 +32,21 @@ function log_loss(y::Array{Float64}, y_hat::Array{Float64})
 end
 
 
+function log_loss(Y::Array{Float64, 2}, Y_hat::Array{Float64,2})
+    n, m = size(Y)
+    @assert size(Y) == size(Y_hat)
+    sum = 0.0
+    for i = 1:n
+	for j =1:m
+            sum += log_loss(Y[i,j], Y_hat[i,j])
+	end
+    end
+    num = n*m
+    
+    return (sum / num) 
+end
+
+
 function log_loss_prime(y::Float64, y_hat::Float64)
     if y == y_hat
 	return 0.0

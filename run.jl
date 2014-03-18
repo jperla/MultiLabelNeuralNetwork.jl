@@ -57,7 +57,7 @@ function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T}, y_hat:
     end
     @printf("losses: ")
     loss = log_loss(Y, y_hat)
-    micro_f1 = 0.0 # micro_f1_calculate(y_hat, Y)
+    micro_f1 = micro_f1_calculate(y_hat, Y)
     accuracy = accuracy_calculate(y_hat, Y)
     return loss, micro_f1, accuracy
 end
@@ -70,10 +70,10 @@ function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
         @printf("New epoch: %s\n", e)
         @time for i in 1:size(Y, 1)
             if ((modn == 1) || (i % modn == 1))
-                @time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
+                #@time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
     	        @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
                 @printf("Epoch %i Iter %i (loss %4f): %s", e, i, test_loss, w[1:3]')
-                @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
+                #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
                 @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
             end
             @time train_samples!(g, w, X, Y, i:i, e)
