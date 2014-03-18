@@ -16,7 +16,7 @@ function zero_one_calculate(probabilities::Array{Float64, 2}, truth::Array{Float
     n = size(probabilities, 1)
     sum = 0
     for i=1:n
-        sum += zero_one_loss(probabilities[i,:][:], truth[i,:][:])
+        sum += zero_one_loss(predictions[i,:][:], truth[i,:][:])
     end
     return sum / n
 end
