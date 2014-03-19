@@ -50,6 +50,7 @@ output_probabilities = zeros(Float64, 3)
 calculate_label_probabilities!(sln, x1, output_probabilities, 1)
 
 # Check that dense calculations are the same as sparse
+x1 = full(x1)
 forward_propagate!(sln, activation, x1, 1)
 dense_probabilities = zeros(Float64, 3)
 calculate_label_probabilities!(sln, x1, dense_probabilities, 1)
