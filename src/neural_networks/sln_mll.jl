@@ -1,59 +1,57 @@
-include("abstract_neural_networks.jl")
 include("neural_networks.jl")
 
 #####################################
 # Weights for the neural network
 #####################################
 
-type SLN_MLL <: NeuralNetworkStorage
+type SLN_MLL{T} <: NeuralNetworkStorage{T}
     # single layer neural network for multi label learning with skip level weights
-    input_hidden::Weights # weights to calculate hidden layer
-    hidden_output::Weights # weights to the final layer
-    input_output::Weights # skip-level weights direction from input to outputs
+    input_hidden::WeightMatrix{T} # weights to calculate hidden layer
+    hidden_output::WeightMatrix{T} # weights to the final layer
+    input_output::WeightMatrix{T} # skip-level weights direction from input to outputs
 end
 
-type SLN_MLL_Activation <: NeuralNetworkStorage
+type SLN_MLL_Activation{T} <: NeuralNetworkStorage{T}
     # single layer neural network activation levels after being trained on input
-    hidden::Activations
-    output::Activations
+    hidden::Activations{T}
+    output::Activations{T}
 end
 
-
-type SLN_MLL_Deltas <: NeuralNetworkStorage
-    hidden::Array{Float64}
-    output::Array{Float64}
+type SLN_MLL_Deltas{T} <: NeuralNetworkStorage{T}
+    hidden::Array{T}
+    output::Array{T}
 end
 
-type SLN_MLL_Derivatives <: NeuralNetworkStorage
-    input_hidden::Array{Float64,2} # derivatives of weights to calculate hidden layer
-    hidden_output::Array{Float64,2} # derivatives of weights to the final layer
-    input_output::Array{Float64,2} # skip-level weights direction from input to outputs
+type SLN_MLL_Derivatives{T} <: NeuralNetworkStorage{T}
+    input_hidden::Array{T, 2} # derivatives of weights to calculate hidden layer
+    hidden_output::Array{T, 2} # derivatives of weights to the final layer
+    input_output::Array{T, 2} # skip-level weights direction from input to outputs
 end
 
 #####################################
 # Constructors
 #####################################
 
-function SLN_MLL(num_dimensions::Int, num_labels::Int, num_hidden::Int)
-    input_output = randn(num_dimensions, num_labels)
-    input_hidden = randn(num_dimensions, num_hidden)
-    hidden_output = randn(num_hidden, num_labels)
-    SLN_MLL(input_hidden, hidden_output, input_output)
+function SLN_MLL(T, num_dimensions::Int, num_labels::Int, num_hidden::Int)
+    input_output = convert(Array{T, 2}, randn(num_dimensions, num_labels))
+    input_hidden = convert(Array{T, 2}, randn(num_dimensions, num_hidden))
+    hidden_output = convert(Array{T, 2}, randn(num_hidden, num_labels))
+    SLN_MLL{T}(input_hidden, hidden_output, input_output)
 end
 
-function SLN_MLL_Activation(sln::SLN_MLL)
-    SLN_MLL_Activation(zeros(num_hidden(sln)), zeros(num_output(sln)))
+function SLN_MLL_Activation{T}(sln::SLN_MLL{T})
+    SLN_MLL_Activation{T}(zeros(num_hidden(sln)), zeros(num_output(sln)))
 end
 
-function SLN_MLL_Deltas(sln::SLN_MLL)
-    SLN_MLL_Deltas(zeros(num_hidden(sln)), zeros(num_output(sln)))
+function SLN_MLL_Deltas{T}(sln::SLN_MLL{T})
+    SLN_MLL_Deltas{T}(zeros(num_hidden(sln)), zeros(num_output(sln)))
 end
 
-function SLN_MLL_Derivatives(sln::SLN_MLL)
+function SLN_MLL_Derivatives{T}(sln::SLN_MLL{T})
     input_hidden = zeros(size(sln.input_hidden))
     input_output = zeros(size(sln.input_output))
     hidden_output = zeros(size(sln.hidden_output))
-    SLN_MLL_Derivatives(input_hidden, hidden_output, input_output)
+    SLN_MLL_Derivatives{T}(input_hidden, hidden_output, input_output)
 end
 
 #####################################
@@ -69,7 +67,7 @@ num_labels(sln::SLN_MLL) = num_output(sln)
 # Weight read/write helper functions
 #####################################
 
-function fill!(sln::SLN_MLL, weights::Vector{Weight})
+function fill!{T}(sln::SLN_MLL{T}, weights::WeightVector{T})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
@@ -85,7 +83,7 @@ function fill!(sln::SLN_MLL, weights::Vector{Weight})
     end
 end
 
-function flat_weights!(sln::Union(SLN_MLL, SLN_MLL_Derivatives), weights::Array{Weight})
+function flat_weights!{T}(sln::Union(SLN_MLL{T}, SLN_MLL_Derivatives), weights::Array{T})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
@@ -104,8 +102,7 @@ end
 # Classification / Testing
 #####################################
 
-
-function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Matrix{Float64}, i::Int)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::Matrix{U}, i::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
@@ -139,7 +136,7 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Mat
 end
 
 
-function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::SparseMatrixCSC{Float64,Int64}, i::Int)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
@@ -163,7 +160,7 @@ function forward_propagate!(sln::SLN_MLL, activation::SLN_MLL_Activation, X::Spa
     @assert assert_not_NaN(activation.output)
 end
 
-function calculate_label_probabilities!(sln::SLN_MLL, X::AbstractMatrix{Float64}, y_hat::AbstractArray{Float64}, i::Int)
+function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, X, i)
     @assert length(y_hat) == length(activation.output)
@@ -177,7 +174,7 @@ end
 # Training
 #####################################
                                                                      
-function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::AbstractMatrix{Float64}, Y::AbstractMatrix{Float64}, i::Int)
+function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
@@ -211,7 +208,7 @@ function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Abstr
 end
 
 
-function calculate_derivatives!(sln::SLN_MLL, activation::SLN_MLL_Activation, derivatives::SLN_MLL_Derivatives, deltas::SLN_MLL_Deltas, X::AbstractMatrix{Float64}, i::Int)
+function calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, derivatives::SLN_MLL_Derivatives{T}, deltas::SLN_MLL_Deltas{T}, X::AbstractMatrix{U}, i::Int)
     ############################################################
     #  calculate derivatives for weights from input to hidden layer
     ############################################################

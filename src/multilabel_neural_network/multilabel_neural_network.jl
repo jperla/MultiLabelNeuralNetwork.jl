@@ -8,24 +8,24 @@ import StochasticGradient: StochasticGradientDescent,
 type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
-    initial_learning_rate::Float64
+    initial_learning_rate::T
     sln::SLN_MLL
     activation::SLN_MLL_Activation
     deltas::SLN_MLL_Deltas
     derivatives::SLN_MLL_Derivatives
-    regularization_constant::Float64
+    regularization_constant::T
 end
 
 type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
-    initial_learning_rate::Float64
+    initial_learning_rate::T
     sln::SLN_MLL
     diagonal_sum_of_gradients::Vector{T}
     activation::SLN_MLL_Activation                                                                                     
     deltas::SLN_MLL_Deltas                                                                                             
     derivatives::SLN_MLL_Derivatives
-    regularization_constant::Float64 
+    regularization_constant::T 
 end
 
 typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
@@ -35,7 +35,7 @@ function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{
     calculate_label_probabilities!(g.sln, X, y_hat, i)
 end
 
-function calculate_gradient!(g::MultilabelSLN{Float64}, weights::Vector{Float64}, X::AbstractMatrix{Float64}, Y::AbstractMatrix{Float64}, i::Int)
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int)
     fill!(g.sln, weights)
     back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i)
     flat_weights!(g.derivatives, g.scratch_gradient)

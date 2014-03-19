@@ -6,7 +6,8 @@ import NeuralNetworks: SLN_MLL, forward_propagate!, back_propagate!,
                        fill!, flat_weights!, assert_not_NaN,
                        gradient, calculate_label_probabilities!, log_loss, square_loss, read_data
 
-sln = SLN_MLL(10, 3, 2)
+TESTT = Float64
+sln = SLN_MLL(TESTT, 10, 3, 2)
 
 @test assert_not_NaN(sln)
 x = sln.input_output[1]
@@ -15,18 +16,18 @@ sln.input_output[1] = NaN
 sln.input_output[1] = x
 
 # test weights flattening/filling/reading/writing
-flat1 = zeros(Float64, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
+flat1 = zeros(TESTT, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
 flat_weights!(sln, flat1)
 fill!(sln, flat1)
-flat2 = zeros(Float64, length(flat1))
+flat2 = zeros(TESTT, length(flat1))
 flat_weights!(sln, flat2)
 @test flat1 == flat2
-sln2 = SLN_MLL(10, 3, 2)
-flat3 = zeros(Float64, length(flat1))
+sln2 = SLN_MLL(TESTT, 10, 3, 2)
+flat3 = zeros(TESTT, length(flat1))
 flat_weights!(sln2, flat3)
 @test flat2 != flat3
 fill!(sln2, flat2)
-flat4 = zeros(Float64, length(flat1))
+flat4 = zeros(TESTT, length(flat1))
 flat_weights!(sln2, flat4)
 @test flat2 == flat4
 

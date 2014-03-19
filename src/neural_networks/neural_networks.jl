@@ -1,31 +1,30 @@
-include("abstract_neural_networks.jl")
-
-function zero!(nn::NeuralNetworkStorage)
-    # Zeroes out all of the Weights in the neural network
+function zero!{T}(nn::NeuralNetworkStorage{T})
+    # Zeroes out all of the weights in the neural network
     fields = names(nn)
     types = typeof(nn).types
     for (t,f) in zip(types, fields)
-        if t <: Weights
+        if t <: Array{T}
             fill!(nn.(f), 0)
         end
     end
 end
 
-function assert_not_NaN(nn::NeuralNetworkStorage)
+function assert_not_NaN{T}(nn::NeuralNetworkStorage{T})
     # Asserts none of the weights are NaN
     fields = names(nn)
-    types = typeof(nn).types
-    for (t,f) in zip(types, fields)
-        if t <: Array{Float64}
-            if !assert_not_NaN(nn.(f))
-                return false
-            end
+    for f in fields
+        if !assert_not_NaN(nn.(f))
+            return false
         end
     end
     return true
 end
 
-function assert_not_NaN(x::Array{Float64})
+function assert_not_NaN{T}(x::T)
+   return true
+end
+
+function assert_not_NaN{T<:FloatingPoint}(x::Array{T})
     for i in 1:length(x)
 	if !assert_not_NaN(x[i])
 	    return false
@@ -34,7 +33,7 @@ function assert_not_NaN(x::Array{Float64})
     return true
 end
 
-function assert_not_NaN(x::Float64)
+function assert_not_NaN{T<:FloatingPoint}(x::T)
     if false || isequal(x, NaN)
     	return false
     else
@@ -59,11 +58,11 @@ function sigmoid_prime(x)
     return 1.0 * base_sigmoid(x) * (1.0 - base_sigmoid(x))
 end
 
-#####################################
-# Inspection, Debugging,  and Reporting
-#####################################
+########################################
+# Inspection, Debugging, and Reporting
+########################################
 
-function top_features{T <: String}(features::Vector{T}, weights::Vector{Weight})
+function top_features{T<:String, W<:FloatingPoint}(features::Vector{T}, weights::WeightVector{W})
     # Accepts an array of weights and an array of human-readable names for the features
     # Returns a sorted list of top (absolute value) size weights (only the top N)
     @assert length(weights) == length(features)
@@ -71,7 +70,7 @@ function top_features{T <: String}(features::Vector{T}, weights::Vector{Weight})
     return top
 end
 
-function top_weights(weights::Vector{Weight})
+function top_weights{W<:FloatingPoint}(weights::WeightVector{W})
     top = [(i, w) for (_, i, w) in sort(collect(zip(abs(weights), [1:length(weights)], weights)), rev=true)]
     return top
 end

@@ -1,6 +1,6 @@
-include("neural_networks/abstract_neural_networks.jl")
-
 module NeuralNetworks
+
+include("neural_networks/abstract_neural_networks.jl")
 
 importall Base
 
@@ -13,6 +13,7 @@ export SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
        top_features, top_weights,
        hidden_nodes_table,
        assert_not_NaN,
+       WeightMatrix, WeightVector,
        fill!, flat_weights!, read_data
 
 include("neural_networks/sln_mll.jl")

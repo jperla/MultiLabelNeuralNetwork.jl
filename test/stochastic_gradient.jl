@@ -29,7 +29,7 @@ function num_labels{T}(g::MultilabelSLN{T})
 end
 
 function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
-    y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
+    y_hat = zeros(T, (size(Y, 1), num_labels(g)))
     for i in 1:size(Y, 1)
         predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
     end
@@ -40,7 +40,7 @@ function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Matrix{T})
 end
 
 function dataset_log_loss{T}(g, w::Vector{T}, X::Matrix{T}, Y::Vector{T})
-    y_hat = zeros(Float64, size(Y, 1))
+    y_hat = zeros(T, size(Y, 1))
     for i in 1:size(Y, 1)
         predict!(g, w, X, y_hat, i)
     end
@@ -72,6 +72,7 @@ end
 ##############################################################
 
 NEPOCHS = 50
+TESTT = Float64
 
 # Binary Data
 BX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1]
@@ -82,13 +83,13 @@ dimensions = size(BX, 2)
 # Binary LR SGD
 @printf("Binary LR SGD\n")
 bweights = randn(dimensions)
-blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
+blrsgd = BinaryLogisticRegressionSGD{TESTT}(zeros(TESTT, dimensions), 1.0)
 @time learn(blrsgd, BX, BY, bweights, NEPOCHS)
 
 # Binary LR AdaGrad
 @printf("Binary LR Adagrad\n")
 bweights = randn(dimensions)
-blrada = BinaryLogisticRegressionAdaGrad{Float64}(zeros(Float64, dimensions), 1.0, ones(Float64, dimensions))
+blrada = BinaryLogisticRegressionAdaGrad{TESTT}(zeros(TESTT, dimensions), 1.0, ones(TESTT, dimensions))
 @time learn(blrada, BX, BY, bweights, NEPOCHS)
 
 ##############################################################
@@ -105,13 +106,13 @@ nlabels = size(MY, 2)
 # Multilabel LR SGD
 @printf("Multilabel LR SGD\n")
 mweights = randn(dimensions * nlabels)
-mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, zeros(Float64, nlabels))
+mlrsgd = MultilabelLogisticRegressionSGD{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, zeros(TESTT, nlabels))
 @time learn(mlrsgd, MX, MY, mweights, NEPOCHS)
 
 # Multilabel LR AdaGrad
 @printf("Multilabel LR AdaGrad\n")
 mweights = randn(dimensions * nlabels)
-mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)), zeros(Float64, nlabels))
+mlrada = MultilabelLogisticRegressionAdaGrad{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, ones(TESTT, length(mweights)), zeros(TESTT, nlabels))
 @time learn(mlrada, MX, MY, mweights, NEPOCHS)
 
 ##############################################################
@@ -121,21 +122,21 @@ mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mwei
 num_hidden = 2
 
 @printf("SLN MLL SGD\n")
-sln = SLN_MLL(dimensions, nlabels, num_hidden)
-mweights = zeros(Float64, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
+sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
+mweights = zeros(TESTT, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
 flat_weights!(sln, mweights)
 activation = SLN_MLL_Activation(sln)
 deltas = SLN_MLL_Deltas(sln)
 derivatives = SLN_MLL_Derivatives(sln)
-slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, activation, deltas, derivatives, 0.0001)
+slnmllsgd = MultilabelSLNSGD{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, sln, activation, deltas, derivatives, 0.0001)
 @time learn(slnmllsgd, MX, MY, mweights, NEPOCHS)
 
 @printf("SLN MLL AdaGrad\n")
-sln = SLN_MLL(dimensions, nlabels, num_hidden)
+sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
 activation = SLN_MLL_Activation(sln)
 deltas = SLN_MLL_Deltas(sln)
 derivatives = SLN_MLL_Derivatives(sln)
 flat_weights!(sln, mweights)
-slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)), activation, deltas, derivatives, 0.0001)
+slnmllada = MultilabelSLNAdaGrad{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, sln, ones(TESTT, length(mweights)), activation, deltas, derivatives, 0.0001)
 @time learn(slnmllada, MX, MY, mweights, NEPOCHS)
 

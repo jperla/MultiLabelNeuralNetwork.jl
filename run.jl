@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 import ArgParse: ArgParseSettings, @add_arg_table, parse_args
 
-import StochasticGradient: train_samples!
+import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        read_data, flat_weights!,
                        log_loss, assert_not_NaN
@@ -57,7 +57,9 @@ function num_labels(g)
     g.num_labels
 end
 
-function dataset_log_loss{T}(g, w::Vector{T}, X::AbstractMatrix{Float64}, Y::AbstractMatrix{T}, y_hat::AbstractMatrix{T})
+function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T}, 
+                                                               X::AbstractMatrix{U}, Y::AbstractMatrix{W}, 
+                                                               y_hat::AbstractMatrix{W})
     @printf("predict: ")
     @time for i in 1:size(Y, 1)
         predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
@@ -69,9 +71,9 @@ function dataset_log_loss{T}(g, w::Vector{T}, X::AbstractMatrix{Float64}, Y::Abs
     return loss, micro_f1, accuracy
 end
 
-function learn(g, w, X, Y, testX, testY; epochs=100, modn=10)
-    y_hat = zeros(Float64, (size(Y, 1), num_labels(g)))
-    test_y_hat = zeros(Float64, (size(testY, 1), num_labels(g)))
+function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10)
+    y_hat = zeros(T, (size(Y, 1), num_labels(g)))
+    test_y_hat = zeros(T, (size(testY, 1), num_labels(g)))
 
     for e in 1:epochs
         @printf("New epoch: %s\n", e)
@@ -116,7 +118,7 @@ function whiten{T<:Number}(a::Array{T, 2})
     return a, m, s
 end
 
-function whiten{T<:Number}(a::Array{T, 2}, m::Matrix{Float64}, s::Matrix{Float64})
+function whiten{T<:Number}(a::Array{T, 2}, m::Matrix{T}, s::Matrix{T})
     a = broadcast(-, a, m)
     a = broadcast(/, a, s)
     return a
@@ -181,20 +183,22 @@ nlabels = size(train_labels, 2)
 # Setup Data and Run
 #########################
 
+RUNT = Float64
+
 if adagrad
     @printf("SLN MLL AdaGrad\n")
-    sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
+    sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
     mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
     flat_weights!(sln, mweights)
-    slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, ones(Float64, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
+    slnmllada = MultilabelSLNAdaGrad{RUNT}(zeros(RUNT, length(mweights)), nlabels, initial_learning_rate, sln, ones(RUNT, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
 
     @time learn(slnmllada, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
 else
     @printf("SLN MLL SGD\n")
-    sln = SLN_MLL(dimensions, nlabels, hidden_nodes)
+    sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
     mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
     flat_weights!(sln, mweights)
-    slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
+    slnmllsgd = MultilabelSLNSGD{RUNT}(zeros(RUNT, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
 
     @time learn(slnmllsgd, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
 end
