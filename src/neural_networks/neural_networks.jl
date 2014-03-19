@@ -49,11 +49,14 @@ end
 relu(x) = max(0, x) # rectified linear units
 @vectorize_1arg Number relu
 
-sigmoid(x) = (2.0 / (1.0 + e^(-x))) - 0.5
+base_sigmoid(x) = (1.0 / (1.0 + e^(-x)))
+
+sigmoid(x) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)
+
 @vectorize_1arg Number sigmoid
 
 function sigmoid_prime(x)
-    return 2.0 * sigmoid(x) * (1 - sigmoid(x))
+    return 1.0 * base_sigmoid(x) * (1.0 - base_sigmoid(x))
 end
 
 #####################################
