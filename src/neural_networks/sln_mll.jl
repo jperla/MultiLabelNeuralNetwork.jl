@@ -197,6 +197,7 @@ function back_propagate!(sln::SLN_MLL, activation, deltas, derivatives, X::Abstr
     end
 
     for j = 1:length(deltas.hidden)
+        deltas.hidden[j] = 0
         for k = 1:length(activation.output)
             deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
         end
