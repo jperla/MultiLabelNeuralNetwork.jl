@@ -46,17 +46,18 @@ function log_loss(Y::Array{Float64, 2}, Y_hat::Array{Float64,2})
     return (sum / num) 
 end
 
+const MLL = 1e7 # max log loss
 
 function log_loss_prime(y::Float64, y_hat::Float64)
     if y == y_hat
-	return 0.0
+        return 0.0
     else
-	ll = (y/y_hat + (y-1)/(1-y_hat))
-	if ll > 10000
-	    ll = 10000
-	elseif ll < -10000
-	    ll = -10000
-	end
+        ll = ((y / y_hat) + ((y - 1.0) / (1.0 - y_hat)))
+        if ll > MLL
+            ll = MLL
+        elseif ll < -MLL
+            ll = -MLL
+        end
     end
     return ll
 end
