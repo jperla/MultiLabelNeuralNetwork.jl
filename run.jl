@@ -153,6 +153,9 @@ savefile = ""
 if file_prefix != ""
     savefile = string(file_prefix, "_", flatten(join(ARGS, "_")))
 end
+if isfile(savefile)
+   error("File already exists, please delete or move the file, or change the parameters: ", savefile)
+end
 
 #########################
 # Read and cleanup data
