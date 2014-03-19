@@ -53,9 +53,10 @@ function learn(g, X, Y, w, num_iter=100)
     for j in 1:num_iter
         
         loss, micro_f1, accuracy= dataset_log_loss(g, w, X, Y)
-        if (j % int(num_iter / 10) == 1)
+        if (num_iter < 10 || (j % int(num_iter / 10) == 1))
             @printf("Epoch %i (loss %4f)", j, loss)
-	    @printf("\t Micro_F1: %4f,  Accuracy: %4f \n", micro_f1, accuracy )
+            @printf("\t Micro_F1: %4f,  Accuracy: %4f \n", micro_f1, accuracy )
+            #@printf("\t Weights: %s \n", w')
         end
 
         for i in 1:size(Y, 1)
