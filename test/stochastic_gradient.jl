@@ -71,6 +71,8 @@ end
 # Test Binary LR SGD
 ##############################################################
 
+NEPOCHS = 50
+
 # Binary Data
 BX = [1.0 1 0 0; 1 1 0 0; 0 0 1 1; 0 0 1 1]
 BY = [1.0, 1.0, 0.0, 0.0]
@@ -81,13 +83,13 @@ dimensions = size(BX, 2)
 @printf("Binary LR SGD\n")
 bweights = randn(dimensions)
 blrsgd = BinaryLogisticRegressionSGD{Float64}(zeros(Float64, dimensions), 1.0)
-@time learn(blrsgd, BX, BY, bweights, 100)
+@time learn(blrsgd, BX, BY, bweights, NEPOCHS)
 
 # Binary LR AdaGrad
 @printf("Binary LR Adagrad\n")
 bweights = randn(dimensions)
 blrada = BinaryLogisticRegressionAdaGrad{Float64}(zeros(Float64, dimensions), 1.0, ones(Float64, dimensions))
-@time learn(blrada, BX, BY, bweights, 20)
+@time learn(blrada, BX, BY, bweights, NEPOCHS)
 
 ##############################################################
 #  Multilabel
@@ -104,13 +106,13 @@ nlabels = size(MY, 2)
 @printf("Multilabel LR SGD\n")
 mweights = randn(dimensions * nlabels)
 mlrsgd = MultilabelLogisticRegressionSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, zeros(Float64, nlabels))
-@time learn(mlrsgd, MX, MY, mweights, 100)
+@time learn(mlrsgd, MX, MY, mweights, NEPOCHS)
 
 # Multilabel LR AdaGrad
 @printf("Multilabel LR AdaGrad\n")
 mweights = randn(dimensions * nlabels)
 mlrada = MultilabelLogisticRegressionAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, ones(Float64, length(mweights)), zeros(Float64, nlabels))
-@time learn(mlrada, MX, MY, mweights, 100)
+@time learn(mlrada, MX, MY, mweights, NEPOCHS)
 
 ##############################################################
 #  Neural Network
@@ -126,7 +128,7 @@ activation = SLN_MLL_Activation(sln)
 deltas = SLN_MLL_Deltas(sln)
 derivatives = SLN_MLL_Derivatives(sln)
 slnmllsgd = MultilabelSLNSGD{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, activation, deltas, derivatives, 0.0001)
-@time learn(slnmllsgd, MX, MY, mweights, 100)
+@time learn(slnmllsgd, MX, MY, mweights, NEPOCHS)
 
 @printf("SLN MLL AdaGrad\n")
 sln = SLN_MLL(dimensions, nlabels, num_hidden)
@@ -135,5 +137,5 @@ deltas = SLN_MLL_Deltas(sln)
 derivatives = SLN_MLL_Derivatives(sln)
 flat_weights!(sln, mweights)
 slnmllada = MultilabelSLNAdaGrad{Float64}(zeros(Float64, length(mweights)), nlabels, 1.0, sln, ones(Float64, length(mweights)), activation, deltas, derivatives, 0.0001)
-@time learn(slnmllada, MX, MY, mweights, 100)
+@time learn(slnmllada, MX, MY, mweights, NEPOCHS)
 
