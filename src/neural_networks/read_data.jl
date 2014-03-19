@@ -25,6 +25,10 @@ function read_data(x::String, mode::String)
     end
 
     path = joinpath("data", x, string(x, "-", suffix, ".csv"))
+    shuffled_path = string(path, ".shuffled")
+    if isfile(shuffled_path)
+        path = shuffled_path
+    end
     file = readdlm(path, ',', Float64)
 
     n = size(file, 1)
