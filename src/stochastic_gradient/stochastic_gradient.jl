@@ -50,9 +50,7 @@ end
 # Update Weights
 #############################################
 
-function regularization_constant(g)
-   return 0.0
-end
+
 
 function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
     return 2 * regularization_constant(g) * weights[i]
