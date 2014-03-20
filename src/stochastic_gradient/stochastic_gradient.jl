@@ -55,12 +55,12 @@ function regularization_constant(g)
 end
 
 function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
-    return -2 * regularization_constant(g) * weights[i]
+    return 2 * regularization_constant(g) * weights[i]
 end
 
 function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, t::Int)
     for i in 1:length(weights)
-        weights[i] = weights[i] + (learning_rate(g, i, t) .* g.scratch_gradient[i]) + regularization(g, weights, i)
+        weights[i] = weights[i] + (learning_rate(g, i, t) .* g.scratch_gradient[i]) + - (learning_rate(g, i, t) .* regularization(g, weights, i))
     end
 end
 
