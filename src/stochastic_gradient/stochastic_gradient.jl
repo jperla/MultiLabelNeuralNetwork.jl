@@ -79,7 +79,8 @@ function train_samples!{T, U}(gradient::GradientScratch{T},
 			      weights::Vector{T},
                               X::AbstractMatrix{T}, Y::U,
                               r::Range1,
-                              t::Int # iteration number
+                              t::Int, # iteration number
+                              dropout::Int
                              )
     # Accepts one stochastic sample from the distribution, and updates the weight vector given gradient function.
     # Uses the scratch_gradient as a workspace to avoid memory allocation.
@@ -157,7 +158,7 @@ function calculate_gradient!{T<:FloatingPoint}(g::BinaryLogisticRegression{T}, w
     for j in 1:length(weights)
         g.scratch_gradient[j] = (true_yi - predicted_yi) * X[i,j]
     end
-    
+
     # Ensure true labels Y do not change
     Y[i] = true_yi
 end
@@ -175,7 +176,7 @@ function predict!{T}(g::MultilabelLogisticRegression{T}, weights::Vector{T}, X::
     end
 end
 
-function calculate_gradient!{T<:FloatingPoint}(g::MultilabelLogisticRegression{T}, 
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelLogisticRegression{T},
                              weights::Vector{T}, X::Matrix{T}, Y::Matrix{T}, i::Int)
     @assert g.num_labels == size(Y, 2)
     @assert length(weights) == (size(X, 2) * g.num_labels) == length(g.scratch_gradient)

@@ -136,12 +136,17 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 end
 
 
-function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int, dropout::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
         h = X[i,:] * sln.input_hidden[:, k]
         activation.hidden[k] = relu(h[1,1])
+        if dropout ==1
+            if randbool()
+                activation.hidden[k] = 0
+            end
+        end
     end
     @assert assert_not_NaN(activation.hidden)
 
@@ -160,9 +165,9 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     @assert assert_not_NaN(activation.output)
 end
 
-function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int)
+function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int, dropout::Int)
     activation = SLN_MLL_Activation(sln)
-    forward_propagate!(sln, activation, X, i)
+    forward_propagate!(sln, activation, X, i, dropout)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
         y_hat[j] = sigmoid(activation.output[j])
@@ -173,8 +178,8 @@ end
 #####################################
 # Training
 #####################################
-                                                                     
-function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int)
+
+function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int, dropout::Int)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k
@@ -199,6 +204,9 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
             deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
         end
     end
+
+
+
 
     @assert assert_not_NaN(deltas)
 

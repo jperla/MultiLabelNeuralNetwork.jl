@@ -5,7 +5,7 @@ import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        read_data, flat_weights!,
                        log_loss, assert_not_NaN
-import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD, 
+import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD,
                                 predict!, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
 
@@ -48,6 +48,11 @@ function parse_commandline()
 	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
 	    arg_type = String
 	    default = ""
+
+    "--dropout"
+        arg_type = Integer
+        default = 0
+
    end
 
     return parse_args(s)
@@ -57,8 +62,8 @@ function num_labels(g)
     g.num_labels
 end
 
-function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T}, 
-                                                               X::AbstractMatrix{U}, Y::AbstractMatrix{W}, 
+function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
+                                                               X::AbstractMatrix{U}, Y::AbstractMatrix{W},
                                                                y_hat::AbstractMatrix{W})
     @printf("predict: ")
     @time for i in 1:size(Y, 1)
@@ -96,9 +101,9 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
                 end
             end
             if showtime
-                @time train_samples!(g, w, X, Y, i:i, e)
+                @time train_samples!(g, w, X, Y, i:i, e, dropout)
             else
-                train_samples!(g, w, X, Y, i:i, e)
+                train_samples!(g, w, X, Y, i:i, e, dropout)
             end
         end
     end
@@ -137,6 +142,7 @@ adagrad = parsed_args["adagrad"]
 regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
 showtime = parsed_args["time"]
+dropout = parsed_args["dropout"]
 
 function flatten(s)
     s = replace(s, " ", "_")
