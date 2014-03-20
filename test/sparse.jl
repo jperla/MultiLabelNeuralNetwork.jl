@@ -1,60 +1,21 @@
 using Base.Test
 
-####################################
-# Efficient Sparse Column Iterator
-####################################
+import Sparser: SparseMatrixCSR, nonzero
 
-immutable NonzeroSparseColumnIter{Tv, Ti<:Integer}
-    s::SparseMatrixCSC{Tv, Ti}
-    col::Int
-    start::Int
-    stop::Int
-end
+n1 = randn(3, 4)
+csr = SparseMatrixCSR(n1)
+@assert csr[1, 1] == n1[1, 1]
+@assert csr[3, 4] == n1[3, 4]
+@assert csr[3, 1] == n1[3, 1]
+@assert csr[1, 4] == n1[1, 4]
+@assert csr[2, 2] == n1[2, 2]
 
-nonzero(s::SparseMatrixCSC, col::Int) = NonzeroSparseColumnIter(s, col, s.colptr[col], s.colptr[col+1] - 1)
-Base.start{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}) = it.start
-Base.next{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}, k::Int) = ((it.s.rowval[k], it.col, it.s.nzval[k]), k+1)
-Base.done{Tv, Ti<:Integer}(it::NonzeroSparseColumnIter{Tv, Ti}, k::Int) = k > it.stop
-Base.length(it::NonzeroSparseColumnIter) = it.stop - it.start + 1
-
-####################################
-# Efficient Sparse Matrix Iterator
-####################################
-
-immutable NonzeroSparseMatrixCSCIter{Tv, Ti<:Integer}
-    s::SparseMatrixCSC{Tv, Ti}
-end
-
-# todo: types
-nonzero(s::SparseMatrixCSC) = NonzeroSparseMatrixCSCIter(s)
-function Base.start{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti})
-    col = 1
-    k = it.s.colptr[col]
-    while col <= it.s.n && it.s.colptr[col+1] == k
-        col = col + 1
-    end
-    k = it.s.colptr[col]
-    return (col, k)
-end
-Base.done{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti}, state::(Int, Int)) = state[2] > length(it.s.rowval)
-Base.length(it::NonzeroSparseMatrixCSCIter) = nfilled(it.s)
-function Base.next{Tv, Ti<:Integer}(it::NonzeroSparseMatrixCSCIter{Tv, Ti}, state::(Int, Int))
-    col, k = state
-    value = (it.s.rowval[k], col, it.s.nzval[k])
-    if k < (it.s.colptr[col+1] - 1)
-        k = k + 1
-    else
-        col = col + 1
-        k = it.s.colptr[col]
-        while col <= it.s.n && it.s.colptr[col+1] == k
-            col = col + 1
-        end
-        k = it.s.colptr[col]
-    end
-    next_state = (col, k)
-    return (value, next_state)
-end
-
+csr2 = SparseMatrixCSR(transpose(sparse(n1)))
+@assert csr2[1, 1] == n1[1, 1]
+@assert csr2[3, 4] == n1[3, 4]
+@assert csr2[3, 1] == n1[3, 1]
+@assert csr2[1, 4] == n1[1, 4]
+@assert csr2[2, 2] == n1[2, 2]
 
 # Simple hard-coded tests
 s = speye(3)
@@ -127,9 +88,15 @@ s = sparse([0.0 1.0; 0.0 0.0])
 s = sparse([0.0 0.0; 0.0 0.0])
 @test [i for i in nonzero(s)] == []
 
+f, n, n2, n3 = 0, 0, 0, 0
 for i in 1:10
     s = sprand(3, 4, 0.5)
-    f = [i for i in zip(findnz(s)...)]
-    n = [i for i in nonzero(s)]
+    f = sort([i for i in zip(findnz(s)...)])
+    n = sort([i for i in nonzero(s)])
+    n2 = sort([i for i in nonzero(SparseMatrixCSR(transpose(s)))])
+    n3 = sort([i for i in nonzero(SparseMatrixCSR(full(s)))])
+    @test n2 == n3
     @test f == n
+    @test f == n == n2 == n3
 end
+
