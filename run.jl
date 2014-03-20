@@ -92,10 +92,10 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
                     @printf(f, "\n")
                     close(f)
                 else
-                    #@time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
+                    @time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
     	            @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
                     @printf("Epoch %i Iter %i (loss %4f): %s", e, i, test_loss, w[1:3]')
-                    #@printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
+                    @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
                     @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
                 end
             end
@@ -168,6 +168,7 @@ end
 # Read and cleanup data
 #########################
 train_features, train_labels = read_data(dataset, "train")
+println("Dropout on: $dropout") 
 println("Successfully read data, now whitening...")
 train_features, train_mean, train_std = whiten(train_features)
 train_features = prepend_intercept(train_features)
