@@ -48,10 +48,9 @@ function parse_commandline()
 	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
 	    arg_type = String
 	    default = ""
-
-    "--dropout"
-        arg_type = Integer
-        default = 0
+    	"--dropout"
+            help = "use dropout during training"
+            action = :store_true
 
    end
 
@@ -142,7 +141,7 @@ adagrad = parsed_args["adagrad"]
 regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
 showtime = parsed_args["time"]
-dropout = parsed_args["dropout"]
+dropout = int(parsed_args["dropout"])
 
 function flatten(s)
     s = replace(s, " ", "_")

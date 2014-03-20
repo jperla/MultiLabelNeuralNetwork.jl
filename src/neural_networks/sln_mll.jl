@@ -102,7 +102,7 @@ end
 # Classification / Testing
 #####################################
 
-function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::Matrix{U}, i::Int)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::Matrix{U}, i::Int, dropout::Int)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
@@ -111,6 +111,12 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
             h += X[i, j] * sln.input_hidden[j, k]
         end
         activation.hidden[k] = relu(h)
+
+        if dropout ==1                                                                                                                                                 
+            if randbool()                                                                                                                                              
+                activation.hidden[k] = 0                                                                                                                               
+            end                                                                                                                                                        
+        end 
     end
     @assert assert_not_NaN(activation.hidden)
 

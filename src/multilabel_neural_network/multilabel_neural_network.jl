@@ -35,7 +35,7 @@ function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{
     calculate_label_probabilities!(g.sln, X, y_hat, i, 0)
 end
 
-function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int, dropout::Int64)
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int, dropout::Int)
     fill!(g.sln, weights)
     back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i, dropout::Int64)
     flat_weights!(g.derivatives, g.scratch_gradient)
