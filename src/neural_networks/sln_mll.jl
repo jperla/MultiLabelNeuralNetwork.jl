@@ -111,11 +111,8 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
             h += X[i, j] * sln.input_hidden[j, k]
         end
 
-        if dropout && randbool()
-                activation.hidden[k] = 0
-        else
-            activation.hidden[k] = relu(h)
-        end
+
+        activation.hidden[k] = relu(h)
 
     end
     @assert assert_not_NaN(activation.hidden)
@@ -149,11 +146,8 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
         h = X[i,:] * sln.input_hidden[:, k]
         activation.hidden[k] = relu(h[1,1])
 
-        if dropout && randbool()
-                activation.hidden[k] = 0
-        else
-            activation.hidden[k] = relu(h)
-        end
+
+        activation.hidden[k] = relu(h)
     end
     @assert assert_not_NaN(activation.hidden)
 

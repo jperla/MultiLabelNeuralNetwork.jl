@@ -75,7 +75,7 @@ function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
     return loss, micro_f1, accuracy
 end
 
-function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10)
+function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10, dropout)
     y_hat = zeros(T, (size(Y, 1), num_labels(g)))
     test_y_hat = zeros(T, (size(testY, 1), num_labels(g)))
 
@@ -168,7 +168,7 @@ end
 # Read and cleanup data
 #########################
 train_features, train_labels = read_data(dataset, "train")
-println("Dropout on: $dropout") 
+println("Dropout on: $dropout")
 println("Successfully read data, now whitening...")
 train_features, train_mean, train_std = whiten(train_features)
 train_features = prepend_intercept(train_features)
