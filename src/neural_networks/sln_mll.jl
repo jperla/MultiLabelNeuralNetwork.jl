@@ -111,14 +111,13 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
             h += X[i, j] * sln.input_hidden[j, k]
         end
 
-
         if dropout && randbool()
             activation.hidden[k] = 0
         else
             activation.hidden[k] = relu(h)
         end
-
     end
+
     @assert assert_not_NaN(activation.hidden)
 
     for k in 1:size(sln.input_output, 2)
@@ -140,6 +139,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
+end
 end
 
 
@@ -199,12 +199,11 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
 
     for j=1:size(Y, 2)
         deltas.output[j] = log_loss_prime(Y[i,j], sigmoid(activation.output[j])) * sigmoid_prime(activation.output[j])
-
         if isequal(deltas.output[j], NaN)
-    	    logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
-    	    sigresult = sigmoid_prime(activation.output[j])
-    	    println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
-    	end
+            logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
+            sigresult = sigmoid_prime(activation.output[j])
+            println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
+        end
     end
 
     for j = 1:length(deltas.hidden)
@@ -214,11 +213,7 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
         end
     end
 
-
-
-
     @assert assert_not_NaN(deltas)
-
     @assert assert_not_NaN(derivatives)
     calculate_derivatives!(sln, activation, derivatives, deltas, X, i)
     @assert assert_not_NaN(derivatives)
