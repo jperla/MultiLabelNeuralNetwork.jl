@@ -112,11 +112,11 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
         end
         activation.hidden[k] = relu(h)
 
-        if dropout ==1                                                                                                                                                 
-            if randbool()                                                                                                                                              
-                activation.hidden[k] = 0                                                                                                                               
-            end                                                                                                                                                        
-        end 
+        if dropout ==1
+            if randbool()
+                activation.hidden[k] = 0
+            end
+        end
     end
     @assert assert_not_NaN(activation.hidden)
 
@@ -192,7 +192,7 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
-    forward_propagate!(sln, activation, X, i)
+    forward_propagate!(sln, activation, X, i, dropout)
     @assert assert_not_NaN(activation)
 
     for j=1:size(Y, 2)
