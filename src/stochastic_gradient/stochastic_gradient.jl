@@ -68,7 +68,7 @@ end
 # Training
 #############################################
 
-function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int, dropout::Int)
+function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int, dropout::Bool)
     @assert i <= size(X, 1)
     calculate_gradient!(g, weights, X, Y, i, dropout) # fill scratch gradient
     save_gradient!(g)
@@ -80,7 +80,7 @@ function train_samples!{T, U}(gradient::GradientScratch{T},
                               X::AbstractMatrix{T}, Y::U,
                               r::Range1,
                               t::Int, # iteration number
-                              dropout::Int
+                              dropout::Bool
                              )
     # Accepts one stochastic sample from the distribution, and updates the weight vector given gradient function.
     # Uses the scratch_gradient as a workspace to avoid memory allocation.

@@ -112,7 +112,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
         end
         activation.hidden[k] = relu(h)
 
-        if dropout ==1
+        if dropout == 1
             if randbool()
                 activation.hidden[k] = 0
             end
@@ -148,7 +148,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     for k in 1:size(sln.input_hidden, 2)
         h = X[i,:] * sln.input_hidden[:, k]
         activation.hidden[k] = relu(h[1,1])
-        if dropout ==1
+        if dropout == 1
             if randbool()
                 activation.hidden[k] = 0
             end
@@ -197,11 +197,12 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
 
     for j=1:size(Y, 2)
         deltas.output[j] = log_loss_prime(Y[i,j], sigmoid(activation.output[j])) * sigmoid_prime(activation.output[j])
-	if isequal(deltas.output[j], NaN)
-	    logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
-	    sigresult = sigmoid_prime(activation.output[j])
-	    println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
-	end
+
+        if isequal(deltas.output[j], NaN)
+    	    logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
+    	    sigresult = sigmoid_prime(activation.output[j])
+    	    println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
+    	end
     end
 
     for j = 1:length(deltas.hidden)
