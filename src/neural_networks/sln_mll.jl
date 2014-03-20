@@ -139,7 +139,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
-end
+
 end
 
 
