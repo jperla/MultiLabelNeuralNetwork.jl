@@ -87,7 +87,7 @@ function train_samples!{T, U}(gradient::GradientScratch{T},
     # We assume that x already has an intercept term (constant 1) as the first value.
     @assert length(weights) == length_of_weight_updates(gradient)
     for i in r
-        calculate_gradient_and_update_weights!(gradient, weights, X, Y, i, t)
+        calculate_gradient_and_update_weights!(gradient, weights, X, Y, i, t, dropout)
     end
 end
 
