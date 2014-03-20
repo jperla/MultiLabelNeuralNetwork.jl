@@ -68,9 +68,9 @@ end
 # Training
 #############################################
 
-function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int)
+function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int, dropout::Int)
     @assert i <= size(X, 1)
-    calculate_gradient!(g, weights, X, Y, i) # fill scratch gradient
+    calculate_gradient!(g, weights, X, Y, i, dropout) # fill scratch gradient
     save_gradient!(g)
     update_weights!(g, weights, t)
 end
