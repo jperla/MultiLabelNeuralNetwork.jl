@@ -36,19 +36,19 @@ function parse_commandline()
             help = "Number of epochs to do"
             arg_type = Integer
             default = 100
-	"--regularization", "-r"
-	    help = "Regularization constant"
-	    arg_type = FloatingPoint
+	    "--regularization", "-r"
+	        help = "Regularization constant"
+            arg_type = FloatingPoint
             default = .01
-	"--interval", "-i"
-	    help = "How frequently to print progress"
-	    arg_type = Integer
-	    default = 1000
+        "--interval", "-i"
+            help = "How frequently to print progress"
+            arg_type = Integer
+            default = 1000
         "--file_prefix", "-f"
-	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
-	    arg_type = String
-	    default = ""
-    	"--dropout"
+	        help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
+	        arg_type = String
+	        default = ""
+        "--dropout"
             help = "use dropout during training"
             action = :store_true
 
