@@ -141,7 +141,7 @@ adagrad = parsed_args["adagrad"]
 regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
 showtime = parsed_args["time"]
-dropout = int(parsed_args["dropout"])
+dropout = parsed_args["dropout"]
 
 function flatten(s)
     s = replace(s, " ", "_")

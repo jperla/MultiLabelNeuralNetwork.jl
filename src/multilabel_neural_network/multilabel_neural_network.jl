@@ -32,12 +32,12 @@ typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
 
 function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T}, i::Int)
     fill!(g.sln, weights)
-    calculate_label_probabilities!(g.sln, X, y_hat, i, 0)
+    calculate_label_probabilities!(g.sln, X, y_hat, i, false)
 end
 
-function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int, dropout::Int)
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int, dropout::Bool)
     fill!(g.sln, weights)
-    back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i, dropout::Int64)
+    back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i, dropout::Bool)
     flat_weights!(g.derivatives, g.scratch_gradient)
 end
 
