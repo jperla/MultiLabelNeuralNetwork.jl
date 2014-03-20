@@ -75,7 +75,7 @@ function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
     return loss, micro_f1, accuracy
 end
 
-function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10, dropout)
+function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10)
     y_hat = zeros(T, (size(Y, 1), num_labels(g)))
     test_y_hat = zeros(T, (size(testY, 1), num_labels(g)))
 
