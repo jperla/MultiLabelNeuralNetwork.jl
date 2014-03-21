@@ -1,7 +1,7 @@
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        num_labels,
                        calculate_label_probabilities!, back_propagate!,
-                       fill!, flat_weights!
+                       fill!, flat_weights!, flat_weights_length
 
 import StochasticGradient: StochasticGradientDescent,
                            predict!, train_samples!, calculate_gradient!
@@ -41,23 +41,21 @@ typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
 # Constructors
 ##########################################
 
-MultilabelSLNSGD{T}(sln::SLN_MLL{T},
-                    scratch_gradient::Vector{T};
+MultilabelSLNSGD{T}(sln::SLN_MLL{T};
                     initial_learning_rate::T=0.5,
                     regularization_constant::T=0.0001,
                     dropout::Bool=false) = 
-                    MultilabelSLNSGD{T}(scratch_gradient,
+                    MultilabelSLNSGD{T}(zeros(T, flat_weights_length(sln)),
                                         num_labels(sln), initial_learning_rate, regularization_constant, dropout,
                                         sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
-MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T},
-                        scratch_gradient::Vector{T}; 
+MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
                         initial_learning_rate::T=0.5, 
                         regularization_constant::T=0.0001,
                         dropout::Bool=false) = 
-                        MultilabelSLNAdaGrad{T}(scratch_gradient, 
+                        MultilabelSLNAdaGrad{T}(zeros(T, flat_weights_length(sln)),
                                                 num_labels(sln), initial_learning_rate, regularization_constant, dropout,
-                                                zeros(T, length(scratch_gradient)),
+                                                zeros(T, length(flat_weights_length(sln))),
                                                 sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
 ##########################################

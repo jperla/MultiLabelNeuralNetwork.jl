@@ -125,13 +125,13 @@ num_hidden = 2
 sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
 mweights = zeros(TESTT, flat_weights_length(sln))
 flat_weights!(sln, mweights)
-slnmllsgd = MultilabelSLNSGD(sln, zeros(TESTT, length(mweights)))
+slnmllsgd = MultilabelSLNSGD(sln)
 @time learn(slnmllsgd, MX, MY, mweights, NEPOCHS)
 
 @printf("SLN MLL AdaGrad\n")
 sln2 = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
 mweights2 = zeros(TESTT, flat_weights_length(sln2))
 flat_weights!(sln2, mweights2)
-slnmllada = MultilabelSLNAdaGrad(sln2, zeros(TESTT, length(mweights2)))
+slnmllada = MultilabelSLNAdaGrad(sln2)
 @time learn(slnmllada, MX, MY, mweights2, NEPOCHS)
 

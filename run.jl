@@ -168,14 +168,13 @@ RUNT = Float64
 
 sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
 mweights = zeros(RUNT, flat_weights_length(sln))
-flat_weights!(sln, mweights)
 
 if adagrad
     @printf("SLN MLL AdaGrad\n")
-    slnmll = MultilabelSLNAdaGrad(sln, mweights, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
+    slnmll = MultilabelSLNAdaGrad(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
 else
     @printf("SLN MLL SGD\n")
-    slnmll = MultilabelSLNSGD(sln, mweights, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
+    slnmll = MultilabelSLNSGD(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
 end
 
 @time learn(slnmll, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
