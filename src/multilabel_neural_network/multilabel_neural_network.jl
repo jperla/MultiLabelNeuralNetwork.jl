@@ -10,7 +10,7 @@ import StochasticGradient: StochasticGradientDescent,
 # Multilabel NN Types
 ##########################################
 
-type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
+immutable type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::T
@@ -22,7 +22,7 @@ type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     derivatives::SLN_MLL_Derivatives
 end
 
-type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
+immutable type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::T

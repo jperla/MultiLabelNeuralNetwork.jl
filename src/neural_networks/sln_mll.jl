@@ -4,7 +4,7 @@ include("neural_networks.jl")
 # Weights for the neural network
 #####################################
 
-type SLN_MLL{T} <: NeuralNetworkStorage{T}
+immutable type SLN_MLL{T} <: NeuralNetworkStorage{T}
     # single layer neural network for multi label learning with skip level weights
     input_hidden::WeightMatrix{T} # weights to calculate hidden layer
     hidden_output::WeightMatrix{T} # weights to the final layer

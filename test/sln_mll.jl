@@ -46,8 +46,8 @@ zero!(sln)
 sln.input_hidden[:,1] = -1
 sln.input_hidden[:,2] = 1
 # Train the second label based on the second input, the other two based on the first
-sln.hidden_output = [1e9 0.0 1e9;
-                     0.0 1e9 0.0]
+sln.hidden_output[:] = [1e9 0.0 1e9;
+                        0.0 1e9 0.0]
 forward_propagate!(sln, activation, x1, 1)
 output_probabilities = zeros(TESTT, 3)
 calculate_label_probabilities!(sln, activation, x1, output_probabilities, 1)
