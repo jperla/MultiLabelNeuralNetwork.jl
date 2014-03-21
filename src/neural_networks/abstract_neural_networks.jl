@@ -1,3 +1,5 @@
+abstract LinkFunction
+
 typealias WeightMatrix{T} Matrix{T}
 typealias WeightVector{T} Vector{T}
 

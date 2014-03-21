@@ -5,7 +5,8 @@ import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegres
                            BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
                            predict!, train_samples!, calculate_gradient!
 import NeuralNetworks: log_loss, flat_weights!, flat_weights_length,
-                       SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives
+                       SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
+                       RectifiedLinearUnitLinkFunction, TanhLinkFunction, SigmoidLinkFunction
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNSGD, MultilabelSLNAdaGrad
 
 function num_labels{T}(g::MultilabelLogisticRegressionSGD{T})
@@ -122,14 +123,14 @@ mlrada = MultilabelLogisticRegressionAdaGrad{TESTT}(zeros(TESTT, length(mweights
 num_hidden = 2
 
 @printf("SLN MLL SGD\n")
-sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
+sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden, RectifiedLinearUnitLinkFunction(), SigmoidLinkFunction())
 mweights = zeros(TESTT, flat_weights_length(sln))
 flat_weights!(sln, mweights)
 slnmllsgd = MultilabelSLNSGD(sln)
 @time learn(slnmllsgd, MX, MY, mweights, NEPOCHS)
 
 @printf("SLN MLL AdaGrad\n")
-sln2 = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
+sln2 = SLN_MLL(TESTT, dimensions, nlabels, num_hidden, RectifiedLinearUnitLinkFunction(), SigmoidLinkFunction())
 mweights2 = zeros(TESTT, flat_weights_length(sln2))
 flat_weights!(sln2, mweights2)
 slnmllada = MultilabelSLNAdaGrad(sln2)

@@ -42,23 +42,47 @@ function assert_not_NaN{T<:FloatingPoint}(x::T)
 end
 
 #####################################
-# Vectorized Link functions
+# Link Functions
 #####################################
 
 relu(x) = max(0, x) # rectified linear units
-@vectorize_1arg Number relu
 
-#Abishek's g(x) = 1:7159  tanh(2x/3) +   x; epsilon = 10e-5
-standard_link(x) = 1.7159 * tanh(2x/3) + 10e-5 * x
+# See http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf
+lecunn_tanh(x) = 1.7159 * tanh(2x/3) + 10e-5 * x
 
-base_sigmoid(x) = (1.0 / (1.0 + e^(-x)))
+base_sigmoid{T<:FloatingPoint}(x::T) = (1.0 / (1.0 + e^(-x)))
 
-sigmoid(x) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)
+sigmoid{T<:FloatingPoint}(x::T) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)
 
-@vectorize_1arg Number sigmoid
-
-function sigmoid_prime(x)
+@vectorize_1arg Number relu                                                                                                      
+@vectorize_1arg Number sigmoid                                                                                                      
+function sigmoid_prime{T<:FloatingPoint}(x::T)
     return 1.0 * base_sigmoid(x) * (1.0 - base_sigmoid(x))
+end
+
+type TanhLinkFunction <: LinkFunction
+end
+
+type SigmoidLinkFunction <: LinkFunction
+end
+
+type RectifiedLinearUnitLinkFunction <: LinkFunction
+end
+
+function link_function{T<:FloatingPoint}(f::TanhLinkFunction, input::T)
+    return lecunn_tanh(input)
+end
+
+function link_function{T<:FloatingPoint}(f::SigmoidLinkFunction, input::T)
+    return sigmoid(input)
+end
+
+function link_function{T<:FloatingPoint}(f::RectifiedLinearUnitLinkFunction, input::T)
+    return relu(input)
+end
+
+function link_function_prime{T<:FloatingPoint}(f::SigmoidLinkFunction, input::T)
+    return sigmoid_prime(input)
 end
 
 ########################################

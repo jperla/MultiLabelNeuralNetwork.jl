@@ -4,10 +4,11 @@ import Calculus: check_gradient
 
 import NeuralNetworks: SLN_MLL, forward_propagate!, back_propagate!,
                        fill!, flat_weights!, assert_not_NaN,
-                       gradient, calculate_label_probabilities!, log_loss, square_loss, read_data
+                       gradient, calculate_label_probabilities!, log_loss, square_loss, read_data,
+                       TanhLinkFunction, SigmoidLinkFunction
 
 TESTT = Float64
-sln = SLN_MLL(TESTT, 10, 3, 2)
+sln = SLN_MLL(TESTT, 10, 3, 2, TanhLinkFunction(), SigmoidLinkFunction())
 
 @test assert_not_NaN(sln)
 x = sln.input_output[1]
@@ -22,7 +23,7 @@ fill!(sln, flat1)
 flat2 = zeros(TESTT, length(flat1))
 flat_weights!(sln, flat2)
 @test flat1 == flat2
-sln2 = SLN_MLL(TESTT, 10, 3, 2)
+sln2 = SLN_MLL(TESTT, 10, 3, 2, TanhLinkFunction(), SigmoidLinkFunction())
 flat3 = zeros(TESTT, length(flat1))
 flat_weights!(sln2, flat3)
 @test flat2 != flat3

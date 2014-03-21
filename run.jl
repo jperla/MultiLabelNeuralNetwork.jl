@@ -5,7 +5,8 @@ import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        read_data, flat_weights!, flat_weights_length,
                        log_loss, assert_not_NaN,
-                       whiten, prepend_intercept
+                       whiten, prepend_intercept,
+                       TanhLinkFunction, RectifiedLinearUnitLinkFunction, SigmoidLinkFunction
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD,
                                 predict!, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
@@ -49,6 +50,9 @@ function parse_commandline()
 	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen."
 	    arg_type = String
 	    default = ""
+        "--tanh"
+	    help = "Use TanH linked function (recommended by LeCunn) instead of Rectified Linear Units"
+            action = :store_true
         "--dropout"
             help = "Randomly zero out hidden nodes during training."
             action = :store_true
@@ -117,6 +121,7 @@ regularization_constant = parsed_args["regularization"]
 interval = parsed_args["interval"]
 showtime = parsed_args["time"]
 dropout = parsed_args["dropout"]
+tanh_link = parsed_args["tanh"]
 
 function flatten(s)
     s = replace(s, " ", "_")
@@ -166,7 +171,8 @@ nlabels = size(train_labels, 2)
 
 RUNT = Float64
 
-sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
+hidden_link = if tanh_link TanhLinkFunction() else RectifiedLinearUnitLinkFunction() end
+sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes, hidden_link, SigmoidLinkFunction())
 mweights = zeros(RUNT, flat_weights_length(sln))
 
 if adagrad

@@ -9,6 +9,8 @@ type SLN_MLL{T} <: NeuralNetworkStorage{T}
     input_hidden::WeightMatrix{T} # weights to calculate hidden layer
     hidden_output::WeightMatrix{T} # weights to the final layer
     input_output::WeightMatrix{T} # skip-level weights direction from input to outputs
+    hidden_link::LinkFunction
+    output_link::LinkFunction
 end
 
 type SLN_MLL_Activation{T} <: NeuralNetworkStorage{T}
@@ -32,11 +34,11 @@ end
 # Constructors
 #####################################
 
-function SLN_MLL(T, num_dimensions::Int, num_labels::Int, num_hidden::Int)
+function SLN_MLL(T, num_dimensions::Int, num_labels::Int, num_hidden::Int, hidden_link::LinkFunction, output_link::LinkFunction)
     input_output = convert(Array{T, 2}, randn(num_dimensions, num_labels))
     input_hidden = convert(Array{T, 2}, randn(num_dimensions, num_hidden))
     hidden_output = convert(Array{T, 2}, randn(num_hidden, num_labels))
-    SLN_MLL{T}(input_hidden, hidden_output, input_output)
+    SLN_MLL{T}(input_hidden, hidden_output, input_output, hidden_link, output_link)
 end
 
 function SLN_MLL_Activation{T}(sln::SLN_MLL{T})
@@ -123,7 +125,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
                 h += X[i, j] * sln.input_hidden[j, k]
             end
 
-            activation.hidden[k] = relu(h)
+            activation.hidden[k] = link_function(sln.hidden_link, h)
         end
     end
 
@@ -189,7 +191,7 @@ function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln
     forward_propagate!(sln, activation, X, i, false)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
-        y_hat[j] = sigmoid(activation.output[j])
+        y_hat[j] = link_function(sln.output_link, activation.output[j])
     end
 end
 
@@ -210,8 +212,8 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
     for j=1:size(Y, 2)
         deltas.output[j] = log_loss_prime(Y[i,j], sigmoid(activation.output[j])) * sigmoid_prime(activation.output[j])
         if isequal(deltas.output[j], NaN)
-            logresult = log_loss_prime(Y[i,j], sigmoid(activation.output[j]))
-            sigresult = sigmoid_prime(activation.output[j])
+            logresult = log_loss_prime(Y[i,j], link_function(sln.output_link, activation.output[j]))
+            sigresult = link_function_prime(sln.output_link, activation.output[j])
             println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
         end
     end
