@@ -67,6 +67,13 @@ num_labels(sln::SLN_MLL) = num_output(sln)
 # Weight read/write helper functions
 #####################################
 
+function flat_weights_length(sln::SLN_MLL)
+    io = length(sln.input_output)
+    ih = length(sln.input_hidden)
+    ho = length(sln.hidden_output)
+    return io + ih + ho
+end
+
 function fill!{T}(sln::SLN_MLL{T}, weights::WeightVector{T})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
