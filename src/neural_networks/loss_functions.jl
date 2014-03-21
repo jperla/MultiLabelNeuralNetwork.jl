@@ -1,5 +1,3 @@
-
-
 ######################################################
 #  Log loss for a single example
 ######################################################
@@ -96,13 +94,4 @@ function zero_one_loss(y::Array{Float64}, y_hat::Array{Float64})
         return 1
     end
 end
-
-
-
-
-
-
-
-
-
 

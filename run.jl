@@ -4,7 +4,8 @@ import ArgParse: ArgParseSettings, @add_arg_table, parse_args
 import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        read_data, flat_weights!, flat_weights_length,
-                       log_loss, assert_not_NaN
+                       log_loss, assert_not_NaN,
+                       whiten, prepend_intercept
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD,
                                 predict!, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
@@ -82,9 +83,10 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
             if ((modn == 1) || (i % modn == 1))
                 if savefile != ""
                     f = open(savefile, "a")
-                    @printf(f, "Epoch %i Iter %i Weights", e, i)
+                    samples_seen = ((e - 1) * size(X, 1)) + i
+                    @printf(f, "%i", samples_seen)
                     for j in 1:length(w)
-                        @printf(f, " %f", w[j])
+                        @printf(f, " %4f", w[j])
                     end
                     @printf(f, "\n")
                     close(f)
@@ -103,30 +105,6 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
             end
         end
     end
-end
-
-function whiten{T<:Number}(a::Array{T, 2})
-    m = mean(a, 1)
-    a = broadcast(-, a, m)
-    s = std(a, 1)
-    # Do not divide by 0 stddev or we will get NaN!
-    for i in 1:length(s)
-        if s[i] == 0.0
-            s[i] = 1.0
-        end
-    end
-    a = broadcast(/, a, s)
-    return a, m, s
-end
-
-function whiten{T<:Number}(a::Array{T, 2}, m::Matrix{T}, s::Matrix{T})
-    a = broadcast(-, a, m)
-    a = broadcast(/, a, s)
-    return a
-end
-
-function prepend_intercept{T<:Number}(m::Array{T, 2})
-    return hcat(ones(T, size(m, 1)), m)
 end
 
 parsed_args = parse_commandline()

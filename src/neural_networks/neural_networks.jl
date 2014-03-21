@@ -77,3 +77,32 @@ function top_weights{W<:FloatingPoint}(weights::WeightVector{W})
     top = [(i, w) for (_, i, w) in sort(collect(zip(abs(weights), [1:length(weights)], weights)), rev=true)]
     return top
 end
+
+########################################
+# Data Pre-processing
+########################################
+
+function whiten{T<:Number}(a::Array{T, 2})
+    m = mean(a, 1)
+    a = broadcast(-, a, m)
+    s = std(a, 1)
+    # Do not divide by 0 stddev or we will get NaN!
+    for i in 1:length(s)
+        if s[i] == 0.0
+            s[i] = 1.0
+        end
+    end
+    a = broadcast(/, a, s)
+    return a, m, s
+end
+
+function whiten{T<:Number}(a::Array{T, 2}, m::Matrix{T}, s::Matrix{T})
+    a = broadcast(-, a, m)
+    a = broadcast(/, a, s)
+    return a
+end
+
+function prepend_intercept{T<:Number}(m::Array{T, 2})
+    return hcat(ones(T, size(m, 1)), m)
+end
+

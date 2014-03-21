@@ -64,17 +64,17 @@ MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T},
 # Connections to the neural network
 ##########################################
 
-function regularization{T}(g::MultilabelSLN{T}, weights::Vector{T}, i::Int)
+function regularization{T}(g::MultilabelSLN{T}, weights::AbstractVector{T}, i::Int)
     @printf("Using multilabel regularization! %4f", g.regularization_constant)
     return 2 * g.regularization_constant * weights[i]
 end
 
-function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T}, i::Int)
+function predict!{T}(g::MultilabelSLN{T}, weights::AbstractArray{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T}, i::Int)
     fill!(g.sln, weights)
     calculate_label_probabilities!(g.sln, g.activation, X, y_hat, i)
 end
 
-function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T})
+function predict!{T}(g::MultilabelSLN{T}, weights::AbstractArray{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T})
     fill!(g.sln, weights)
     @assert size(X, 1) == size(y_hat, 1)
     for i in 1:size(X, 1)
@@ -82,7 +82,7 @@ function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{
     end
 end
 
-function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int)
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::AbstractArray{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int)
     fill!(g.sln, weights)
     back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i, g.dropout)
     flat_weights!(g.derivatives, g.scratch_gradient)

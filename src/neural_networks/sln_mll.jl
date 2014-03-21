@@ -74,7 +74,7 @@ function flat_weights_length(sln::SLN_MLL)
     return io + ih + ho
 end
 
-function fill!{T}(sln::SLN_MLL{T}, weights::WeightVector{T})
+function fill!{T}(sln::SLN_MLL{T}, weights::AbstractArray{T})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
@@ -90,7 +90,7 @@ function fill!{T}(sln::SLN_MLL{T}, weights::WeightVector{T})
     end
 end
 
-function flat_weights!{T}(sln::Union(SLN_MLL{T}, SLN_MLL_Derivatives), weights::Array{T})
+function flat_weights!{T}(sln::Union(SLN_MLL{T}, SLN_MLL_Derivatives), weights::AbstractArray{T})
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
@@ -116,13 +116,14 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     for k in 1:size(sln.input_hidden, 2)
         if dropout && randbool() # dropout only 50% of time
             activation.hidden[k] = 0
+            @assert false
         else
             h = 0.0
             for j in 1:size(X, 2)
                 h += X[i, j] * sln.input_hidden[j, k]
             end
 
-            activation.hidden[k] = standard_link(h)
+            activation.hidden[k] = sigmoid(h)
         end
     end
 

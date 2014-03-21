@@ -15,8 +15,8 @@ export SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
        hidden_nodes_table,
        assert_not_NaN,
        WeightMatrix, WeightVector,
-       fill!, flat_weights!, flat_weights_length,
-       read_data
+       whiten, prepend_intercept, read_data,
+       fill!, flat_weights!, flat_weights_length
 
 include("neural_networks/sln_mll.jl")
 include("neural_networks/neural_networks.jl")
