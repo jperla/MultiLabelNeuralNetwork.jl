@@ -123,7 +123,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
                 h += X[i, j] * sln.input_hidden[j, k]
             end
 
-            activation.hidden[k] = sigmoid(h)
+            activation.hidden[k] = relu(h)
         end
     end
 
