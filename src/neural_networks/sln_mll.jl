@@ -94,6 +94,7 @@ function flat_weights!{T}(sln::Union(SLN_MLL{T}, SLN_MLL_Derivatives), weights::
     io = length(sln.input_output)
     ih = length(sln.input_hidden)
     ho = length(sln.hidden_output)
+    @assert length(weights) == io + ih + ho
     for i in 1:io
         weights[i] = sln.input_output[i]
     end
@@ -183,14 +184,12 @@ end
 #     @assert assert_not_NaN(activation.output)
 # end
 
-function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int, dropout::Bool=false)
-    activation = SLN_MLL_Activation(sln)
-    forward_propagate!(sln, activation, X, i, dropout)
+function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int)
+    forward_propagate!(sln, activation, X, i, false)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
         y_hat[j] = sigmoid(activation.output[j])
     end
-
 end
 
 #####################################

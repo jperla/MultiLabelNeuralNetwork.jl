@@ -71,12 +71,20 @@ end
 
 function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T}, i::Int)
     fill!(g.sln, weights)
-    calculate_label_probabilities!(g.sln, X, y_hat, i, false)
+    calculate_label_probabilities!(g.sln, g.activation, X, y_hat, i)
 end
 
-function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int, dropout::Bool=false)
+function predict!{T}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T})
     fill!(g.sln, weights)
-    back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i)
+    @assert size(X, 1) == size(y_hat, 1)
+    for i in 1:size(X, 1)
+        calculate_label_probabilities!(g.sln, g.activation, X, sub(y_hat, (i, 1:size(y_hat, 2))), i)
+    end
+end
+
+function calculate_gradient!{T<:FloatingPoint}(g::MultilabelSLN{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}, i::Int)
+    fill!(g.sln, weights)
+    back_propagate!(g.sln, g.activation, g.deltas, g.derivatives, X, Y, i, g.dropout)
     flat_weights!(g.derivatives, g.scratch_gradient)
 end
 

@@ -34,7 +34,7 @@ function assert_not_NaN{T<:FloatingPoint}(x::Array{T})
 end
 
 function assert_not_NaN{T<:FloatingPoint}(x::T)
-    if false || isequal(x, NaN)
+    if isequal(x, NaN)
     	return false
     else
     	return true

@@ -15,43 +15,42 @@ function parse_commandline()
 
     @add_arg_table s begin
         "dataset"
-            help = "dataset we want to use: emotions, scene, yeast"
+            help = "The dataset we want to use: emotions, scene, yeast, or reuters."
             arg_type = String
             required = true
         "hidden"
-            help = "the number of hidden nodes"
+            help = "The number of hidden nodes."
             arg_type = Integer
             required = true
         "--eta0"
-            help = "the initial learning rate"
+            help = "The initial learning rate."
             arg_type = FloatingPoint
-            default = 0.01
+            default = 0.5
         "--adagrad"
-            help = "the initial learning rate"
+            help = "Use adagrad dynamic learning rate."
             action = :store_true
         "--time"
-            help = "measure timings"
+            help = "Output timings for each iteration."
             action = :store_true
         "--epochs", "-e"
-            help = "Number of epochs to do"
+            help = "Number of epochs to do."
             arg_type = Integer
             default = 100
-	    "--regularization", "-r"
-	        help = "Regularization constant"
+	"--regularization", "-r"
+	    help = "Regularization constan.t"
             arg_type = FloatingPoint
-            default = .01
+            default = 0.001
         "--interval", "-i"
-            help = "How frequently to print progress"
+            help = "How frequently to print progress."
             arg_type = Integer
-            default = 1000
+            default = 10000
         "--file_prefix", "-f"
-	        help = "Save weights at each interval to a file instead of calculating losses and printing to screen"
-	        arg_type = String
-	        default = ""
+	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen."
+	    arg_type = String
+	    default = ""
         "--dropout"
-            help = "use dropout during training"
+            help = "Randomly zero out hidden nodes during training."
             action = :store_true
-
    end
 
     return parse_args(s)
@@ -65,9 +64,7 @@ function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
                                                                X::AbstractMatrix{U}, Y::AbstractMatrix{W},
                                                                y_hat::AbstractMatrix{W})
     @printf("predict: ")
-    @time for i in 1:size(Y, 1)
-        predict!(g, w, X, sub(y_hat, (i, 1:num_labels(g))), i)
-    end
+    @time predict!(g, w, X, y_hat)
     @printf("losses: ")
     loss = log_loss(Y, y_hat)
     micro_f1 = micro_f1_calculate(y_hat, Y)
@@ -167,8 +164,8 @@ end
 #########################
 # Read and cleanup data
 #########################
-train_features, train_labels = read_data(dataset, "train")
 println("Dropout on: $dropout")
+train_features, train_labels = read_data(dataset, "train")
 println("Successfully read data, now whitening...")
 train_features, train_mean, train_std = whiten(train_features)
 train_features = prepend_intercept(train_features)
@@ -192,7 +189,7 @@ nlabels = size(train_labels, 2)
 RUNT = Float64
 
 sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
-mweights = ones(RUNT, flat_weights_length(sln))
+mweights = zeros(RUNT, flat_weights_length(sln))
 flat_weights!(sln, mweights)
 
 if adagrad
@@ -204,3 +201,4 @@ else
 end
 
 @time learn(slnmll, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
+
