@@ -52,7 +52,7 @@ function log_loss_prime(y::Float64, y_hat::Float64)
     if y == y_hat
         return 0.0
     else
-        ll = ((y / y_hat) + ((y - 1.0) / (1.0 - y_hat)))
+        ll =  -((y / y_hat) + ((y - 1.0) / (1.0 - y_hat)))
         if ll > MLL
             ll = MLL
         elseif ll < -MLL

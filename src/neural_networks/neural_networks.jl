@@ -48,6 +48,9 @@ end
 relu(x) = max(0, x) # rectified linear units
 @vectorize_1arg Number relu
 
+#Abishek's g(x) = 1:7159  tanh(2x/3) +   x; epsilon = 10e-5
+standard_link(x) = 1.7159 * tanh(2x/3) + 10e-5 * x
+
 base_sigmoid(x) = (1.0 / (1.0 + e^(-x)))
 
 sigmoid(x) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)

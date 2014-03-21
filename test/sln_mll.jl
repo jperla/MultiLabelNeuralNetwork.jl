@@ -19,9 +19,9 @@ input_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 # All zero weights
 x1 = ones((1, num_dimensions))
 
-x1 = sparse(x1)
+#x1 = sparse(x1)
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1)
+calculate_label_probabilities!(sln, x1, output_probabilities, 1,false) 
 half = (0.5 .* ones(num_labels))
 @test output_probabilities == half
 
@@ -32,7 +32,7 @@ sln.input_output[1,1] = 2e10
 sln.input_output[:,2] = -1e10
 sln.input_output[:,3] = -1e10
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1)
+calculate_label_probabilities!(sln, x1, output_probabilities, 1, false)
 @test output_probabilities[1:end] == [1.0, 0.0, 0.0]
 # Top feature for first output label is first input feature
 tf1 = top_features(input_names, sln.input_output[:,1])
@@ -46,15 +46,15 @@ sln.input_hidden[:,2] = 1
 sln.hidden_output = [1e9 0.0 1e9;
                      0.0 1e9 0.0]
 activation = SLN_MLL_Activation(sln)
-forward_propagate!(sln, activation, x1, 1)
+forward_propagate!(sln, activation, x1, 1, false)
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1)
+calculate_label_probabilities!(sln, x1, output_probabilities, 1, false)
 
 # Check that dense calculations are the same as sparse
 x1 = full(x1)
-forward_propagate!(sln, activation, x1, 1)
+forward_propagate!(sln, activation, x1, 1, false)
 dense_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, dense_probabilities, 1)
+calculate_label_probabilities!(sln, x1, dense_probabilities, 1, false)
 @test output_probabilities == dense_probabilities
 
 

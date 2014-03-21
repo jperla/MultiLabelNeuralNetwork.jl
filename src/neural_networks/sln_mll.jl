@@ -111,10 +111,11 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
             h += X[i, j] * sln.input_hidden[j, k]
         end
 
+        # dropout only 25% of time
         if dropout && randbool()
             activation.hidden[k] = 0
         else
-            activation.hidden[k] = relu(h)
+            activation.hidden[k] = standard_link(h)
         end
     end
 
@@ -143,35 +144,38 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 end
 
 
-function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int, dropout::Bool)
-    @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
+# function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int, dropout::Bool)
+#     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
-    for k in 1:size(sln.input_hidden, 2)
-        h = X[i,:] * sln.input_hidden[:, k]
-        activation.hidden[k] = relu(h[1,1])
+#     for k in 1:size(sln.input_hidden, 2)
+#         h = X[i,:] * sln.input_hidden[:, k]
+#         activation.hidden[k] = relu(h[1,1])
 
-        if dropout && randbool()
-            activation.hidden[k] = 0
-        else
-            activation.hidden[k] = relu(h)
-        end
-    end
-    @assert assert_not_NaN(activation.hidden)
+#         if dropout && randbool()
+#             activation.hidden[k] = 0
+#         else
+# 	    debug1 = typeof(activation.hidden[k])
+# 	    debug2 = typeof(relu(h))
+#             println("Error assigning $debug2 to $debug1")
+#             activation.hidden[k] = relu(h[1,1])
+#         end
+#     end
+#     @assert assert_not_NaN(activation.hidden)
 
-    for k in 1:size(sln.input_output, 2)
-        h = X[i, :] * sln.input_output[:, k]
-        activation.output[k] = h[1,1]
-    end
+#     for k in 1:size(sln.input_output, 2)
+#         h = X[i, :] * sln.input_output[:, k]
+#         activation.output[k] = h[1,1]
+#     end
 
-    @assert assert_not_NaN(sln.hidden_output)
-    for k in 1:size(sln.input_output, 2)
-        h = activation.hidden' * sln.hidden_output[:, k][:]
-        activation.output[k] += h[1,1]
-    end
+#     @assert assert_not_NaN(sln.hidden_output)
+#     for k in 1:size(sln.input_output, 2)
+#         h = activation.hidden' * sln.hidden_output[:, k][:]
+#         activation.output[k] += h[1,1]
+#     end
 
-    @assert length(activation.output) == num_labels(sln)
-    @assert assert_not_NaN(activation.output)
-end
+#     @assert length(activation.output) == num_labels(sln)
+#     @assert assert_not_NaN(activation.output)
+# end
 
 function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int, dropout::Bool)
     activation = SLN_MLL_Activation(sln)
