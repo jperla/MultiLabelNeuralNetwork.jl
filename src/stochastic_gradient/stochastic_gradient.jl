@@ -33,10 +33,13 @@ end
 
 function save_gradient!{T}(g::AdaGrad{T})
     # Keep track of only diagonal entries as an approximation in AdaGrad
-    s = sum(g.scratch_gradient * g.scratch_gradient', 1)
-    @assert length(s) == length(g.diagonal_sum_of_gradients)
-    for i in 1:length(s)
-        g.diagonal_sum_of_gradients[i] += s[i]
+    @assert length(g.scratch_gradient) == length(g.diagonal_sum_of_gradients)
+    for i in 1:length(g.diagonal_sum_of_gradients)
+        gi = g.scratch_gradient[i]
+        #g.diagonal_sum_of_gradients[i] += (gi * gi)
+        for j in 1:length(g.scratch_gradient)
+            g.diagonal_sum_of_gradients[i] += (gi * g.scratch_gradient[j])
+        end
     end
     return nothing
 end
@@ -54,9 +57,10 @@ function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
     return 0.0
 end
 
-function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, t::Int)
+function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, epoch::Int)
     for i in 1:length(weights)
-        weights[i] = weights[i] - (learning_rate(g, i, t) .* g.scratch_gradient[i]) - (learning_rate(g, i, t) .* regularization(g, weights, i))
+        nu = learning_rate(g, i, epoch)
+        weights[i] = weights[i] - (nu * (g.scratch_gradient[i] + regularization(g, weights, i)))
     end
 end
 
