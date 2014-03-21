@@ -109,19 +109,18 @@ end
 # Classification / Testing
 #####################################
 
-function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::Matrix{U}, i::Int, dropout::Bool)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::Matrix{U}, i::Int, dropout::Bool=false)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
-        h = 0.0
-        for j in 1:size(X, 2)
-            h += X[i, j] * sln.input_hidden[j, k]
-        end
-
-        # dropout only 25% of time
-        if dropout && randbool()
+        if dropout && randbool() # dropout only 50% of time
             activation.hidden[k] = 0
         else
+            h = 0.0
+            for j in 1:size(X, 2)
+                h += X[i, j] * sln.input_hidden[j, k]
+            end
+
             activation.hidden[k] = standard_link(h)
         end
     end
@@ -151,7 +150,7 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 end
 
 
-# function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int, dropout::Bool)
+# function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int)
 #     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
 #     for k in 1:size(sln.input_hidden, 2)
@@ -184,7 +183,7 @@ end
 #     @assert assert_not_NaN(activation.output)
 # end
 
-function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int, dropout::Bool)
+function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int, dropout::Bool=false)
     activation = SLN_MLL_Activation(sln)
     forward_propagate!(sln, activation, X, i, dropout)
     @assert length(y_hat) == length(activation.output)
@@ -198,7 +197,7 @@ end
 # Training
 #####################################
 
-function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int, dropout::Bool)
+function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int, dropout::Bool=false)
     # Calculates the derivatives of all weights in the neural network through backpropagation
     ################################################################
     #   Calculate delta_k

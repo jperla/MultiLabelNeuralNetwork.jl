@@ -21,7 +21,7 @@ x1 = ones((1, num_dimensions))
 
 #x1 = sparse(x1)
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1,false) 
+calculate_label_probabilities!(sln, x1, output_probabilities, 1)
 half = (0.5 .* ones(num_labels))
 @test output_probabilities == half
 
@@ -32,7 +32,7 @@ sln.input_output[1,1] = 2e10
 sln.input_output[:,2] = -1e10
 sln.input_output[:,3] = -1e10
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1, false)
+calculate_label_probabilities!(sln, x1, output_probabilities, 1)
 @test output_probabilities[1:end] == [1.0, 0.0, 0.0]
 # Top feature for first output label is first input feature
 tf1 = top_features(input_names, sln.input_output[:,1])
@@ -46,21 +46,29 @@ sln.input_hidden[:,2] = 1
 sln.hidden_output = [1e9 0.0 1e9;
                      0.0 1e9 0.0]
 activation = SLN_MLL_Activation(sln)
-forward_propagate!(sln, activation, x1, 1, false)
+forward_propagate!(sln, activation, x1, 1)
 output_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, output_probabilities, 1, false)
+calculate_label_probabilities!(sln, x1, output_probabilities, 1)
 
 # Check that dense calculations are the same as sparse
 x1 = full(x1)
-forward_propagate!(sln, activation, x1, 1, false)
+forward_propagate!(sln, activation, x1, 1)
 dense_probabilities = zeros(TESTT, 3)
-calculate_label_probabilities!(sln, x1, dense_probabilities, 1, false)
+calculate_label_probabilities!(sln, x1, dense_probabilities, 1)
 @test output_probabilities == dense_probabilities
 
 
+@printf("ah: %s op: %s", activation.hidden', output_probabilities')
+# tanh link function
+@test activation.hidden == [-1.71689444187673; 1.71689444187673]
+@test sigmoid(activation.output) == output_probabilities
+@test output_probabilities[1:end] == [0.0, 1.0, 0.0]
+"""
+# relu link function
 @test activation.hidden == [0.0; num_dimensions]
 @test sigmoid(activation.output) == output_probabilities
 @test output_probabilities[1:end] == [0.5, 1.0, 0.5]
+"""
 
 hidden_nodes_table(STDOUT, sln, input_names, output_labels, 6)
 

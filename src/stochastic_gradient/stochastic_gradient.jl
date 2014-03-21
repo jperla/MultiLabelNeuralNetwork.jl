@@ -50,12 +50,8 @@ end
 # Update Weights
 #############################################
 
-function regularization_constant(g)
-   return g.regularization_constant
-end
-
 function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
-    return 2 * regularization_constant(g) * weights[i]
+    return 0.0
 end
 
 function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, t::Int)
@@ -68,9 +64,9 @@ end
 # Training
 #############################################
 
-function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int, dropout::Bool)
+function calculate_gradient_and_update_weights!{T, U}(g::GradientScratch{T}, weights::Vector{T}, X::AbstractMatrix{T}, Y::U, i::Int, t::Int)
     @assert i <= size(X, 1)
-    calculate_gradient!(g, weights, X, Y, i, dropout) # fill scratch gradient
+    calculate_gradient!(g, weights, X, Y, i) # fill scratch gradient
     save_gradient!(g)
     update_weights!(g, weights, t)
 end
@@ -79,15 +75,14 @@ function train_samples!{T, U}(gradient::GradientScratch{T},
 			      weights::Vector{T},
                               X::AbstractMatrix{T}, Y::U,
                               r::Range1,
-                              t::Int, # iteration number
-                              dropout::Bool
+                              t::Int # iteration number
                              )
     # Accepts one stochastic sample from the distribution, and updates the weight vector given gradient function.
     # Uses the scratch_gradient as a workspace to avoid memory allocation.
     # We assume that x already has an intercept term (constant 1) as the first value.
     @assert length(weights) == length_of_weight_updates(gradient)
     for i in r
-        calculate_gradient_and_update_weights!(gradient, weights, X, Y, i, t, dropout)
+        calculate_gradient_and_update_weights!(gradient, weights, X, Y, i, t)
     end
 end
 
@@ -156,7 +151,7 @@ function calculate_gradient!{T<:FloatingPoint}(g::BinaryLogisticRegression{T}, w
     predicted_yi = Y[i]
 
     for j in 1:length(weights)
-        g.scratch_gradient[j] = (true_yi - predicted_yi) * X[i,j]
+        g.scratch_gradient[j] = (predicted_yi - true_yi) * X[i,j]
     end
 
     # Ensure true labels Y do not change
@@ -186,7 +181,7 @@ function calculate_gradient!{T<:FloatingPoint}(g::MultilabelLogisticRegression{T
     for k in 1:g.num_labels
         for j in 1:nf
             nj = ((k - 1) * nf) + j
-            g.scratch_gradient[nj] = (Y[i, k] - g.predicted[k]) * X[i, j]
+            g.scratch_gradient[nj] = (g.predicted[k] - Y[i, k]) * X[i, j]
         end
     end
 

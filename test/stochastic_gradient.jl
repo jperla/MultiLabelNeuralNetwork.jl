@@ -4,7 +4,7 @@ import Thresholds: micro_f1_calculate, macro_f1_calculate, accuracy_calculate
 import StochasticGradient: BinaryLogisticRegressionSGD, MultilabelLogisticRegressionSGD, StochasticGradientDescent,
                            BinaryLogisticRegressionAdaGrad, MultilabelLogisticRegressionAdaGrad,
                            predict!, train_samples!, calculate_gradient!
-import NeuralNetworks: log_loss, flat_weights!, 
+import NeuralNetworks: log_loss, flat_weights!, flat_weights_length,
                        SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNSGD, MultilabelSLNAdaGrad
 
@@ -123,20 +123,15 @@ num_hidden = 2
 
 @printf("SLN MLL SGD\n")
 sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
-mweights = zeros(TESTT, length(sln.input_hidden) + length(sln.input_output) + length(sln.hidden_output))
+mweights = zeros(TESTT, flat_weights_length(sln))
 flat_weights!(sln, mweights)
-activation = SLN_MLL_Activation(sln)
-deltas = SLN_MLL_Deltas(sln)
-derivatives = SLN_MLL_Derivatives(sln)
-slnmllsgd = MultilabelSLNSGD{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, sln, activation, deltas, derivatives, 0.0001)
+slnmllsgd = MultilabelSLNSGD(sln, zeros(TESTT, length(mweights)))
 @time learn(slnmllsgd, MX, MY, mweights, NEPOCHS)
 
 @printf("SLN MLL AdaGrad\n")
-sln = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
-activation = SLN_MLL_Activation(sln)
-deltas = SLN_MLL_Deltas(sln)
-derivatives = SLN_MLL_Derivatives(sln)
-flat_weights!(sln, mweights)
-slnmllada = MultilabelSLNAdaGrad{TESTT}(zeros(TESTT, length(mweights)), nlabels, 1.0, sln, ones(TESTT, length(mweights)), activation, deltas, derivatives, 0.0001)
-@time learn(slnmllada, MX, MY, mweights, NEPOCHS)
+sln2 = SLN_MLL(TESTT, dimensions, nlabels, num_hidden)
+mweights2 = zeros(TESTT, flat_weights_length(sln2))
+flat_weights!(sln2, mweights2)
+slnmllada = MultilabelSLNAdaGrad(sln2, zeros(TESTT, length(mweights2)))
+@time learn(slnmllada, MX, MY, mweights2, NEPOCHS)
 
