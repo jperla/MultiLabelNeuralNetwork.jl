@@ -3,7 +3,7 @@ import ArgParse: ArgParseSettings, @add_arg_table, parse_args
 
 import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
-                       read_data, flat_weights!,
+                       read_data, flat_weights!, flat_weights_length,
                        log_loss, assert_not_NaN
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD,
                                 predict!, calculate_gradient!
@@ -100,9 +100,9 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
                 end
             end
             if showtime
-                @time train_samples!(g, w, X, Y, i:i, e, dropout)
+                @time train_samples!(g, w, X, Y, i:i, e)
             else
-                train_samples!(g, w, X, Y, i:i, e, dropout)
+                train_samples!(g, w, X, Y, i:i, e)
             end
         end
     end
@@ -191,20 +191,16 @@ nlabels = size(train_labels, 2)
 
 RUNT = Float64
 
+sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
+mweights = ones(RUNT, flat_weights_length(sln))
+flat_weights!(sln, mweights)
+
 if adagrad
     @printf("SLN MLL AdaGrad\n")
-    sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
-    mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
-    flat_weights!(sln, mweights)
-    slnmllada = MultilabelSLNAdaGrad{RUNT}(zeros(RUNT, length(mweights)), nlabels, initial_learning_rate, sln, ones(RUNT, length(mweights)), SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
-
-    @time learn(slnmllada, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
+    slnmll = MultilabelSLNAdaGrad(sln, mweights, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
 else
     @printf("SLN MLL SGD\n")
-    sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)
-    mweights = ones(length(sln.input_output) + length(sln.input_hidden) + length(sln.hidden_output))
-    flat_weights!(sln, mweights)
-    slnmllsgd = MultilabelSLNSGD{RUNT}(zeros(RUNT, length(mweights)), nlabels, initial_learning_rate, sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln), regularization_constant)
-
-    @time learn(slnmllsgd, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
+    slnmll = MultilabelSLNSGD(sln, mweights, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
 end
+
+@time learn(slnmll, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
