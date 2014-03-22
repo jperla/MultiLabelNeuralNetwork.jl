@@ -118,7 +118,6 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     for k in 1:size(sln.input_hidden, 2)
         if dropout && randbool() # dropout only 50% of time
             activation.hidden[k] = 0
-            @assert false
         else
             h = 0.0
             for j in 1:size(X, 2)

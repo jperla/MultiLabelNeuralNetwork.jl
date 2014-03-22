@@ -25,10 +25,10 @@ function save_gradient!{T}(g::AdaGrad{T})
     @assert length(g.scratch_gradient) == length(g.diagonal_sum_of_gradients)
     for i in 1:length(g.diagonal_sum_of_gradients)
         gi = g.scratch_gradient[i]
-        g.diagonal_sum_of_gradients[i] += (gi * gi)
-        #for j in 1:length(g.scratch_gradient)
-        #    g.diagonal_sum_of_gradients[i] += (gi * g.scratch_gradient[j])
-        #end
+        #g.diagonal_sum_of_gradients[i] += (gi * gi)
+        for j in 1:length(g.scratch_gradient)
+            g.diagonal_sum_of_gradients[i] += (gi * g.scratch_gradient[j])
+        end
     end
     return nothing
 end

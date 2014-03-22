@@ -174,6 +174,7 @@ RUNT = Float64
 hidden_link = if tanh_link TanhLinkFunction() else RectifiedLinearUnitLinkFunction() end
 sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes, hidden_link, SigmoidLinkFunction())
 mweights = zeros(RUNT, flat_weights_length(sln))
+flat_weights!(sln, mweights)
 
 if adagrad
     @printf("SLN MLL AdaGrad\n")
