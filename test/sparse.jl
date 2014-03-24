@@ -4,6 +4,9 @@ import Sparser: SparseMatrixCSR, nonzero
 
 n1 = randn(3, 4)
 csr = SparseMatrixCSR(n1)
+@assert size(csr) == (3, 4)
+@assert size(csr, 1) == 3
+@assert size(csr, 2) == 4
 @assert csr[1, 1] == n1[1, 1]
 @assert csr[3, 4] == n1[3, 4]
 @assert csr[3, 1] == n1[3, 1]
@@ -11,6 +14,9 @@ csr = SparseMatrixCSR(n1)
 @assert csr[2, 2] == n1[2, 2]
 
 csr2 = SparseMatrixCSR(transpose(sparse(n1)))
+@assert size(csr2) == (3, 4)
+@assert size(csr2, 1) == 3
+@assert size(csr2, 2) == 4
 @assert csr2[1, 1] == n1[1, 1]
 @assert csr2[3, 4] == n1[3, 4]
 @assert csr2[3, 1] == n1[3, 1]

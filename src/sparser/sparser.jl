@@ -65,6 +65,12 @@ SparseMatrixCSR{T}(m::Matrix{T}) = SparseMatrixCSR(sparse(transpose(m)))
 getindex(csr::SparseMatrixCSR, i, j) = getindex(csr.columns, j, i)
 setindex!(csr::SparseMatrixCSR, v, i, j) = setindex!(csr.columns, v, j, i)
 
+function Base.size(csr::SparseMatrixCSR)
+    s = size(csr.columns)
+    return (s[2], s[1])
+end
+Base.size(csr::SparseMatrixCSR, i) = if i == 1 size(csr.columns, 2) elseif i == 2 size(csr.columns, 1) end
+
 # Row Iterators
 
 immutable NonzeroSparseCSRRowIter{Tv, Ti<:Integer}
