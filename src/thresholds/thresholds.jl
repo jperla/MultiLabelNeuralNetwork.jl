@@ -1,5 +1,3 @@
-typealias Probability Float64
-
 import NeuralNetworks: zero_one_loss
 
 ################################################
@@ -11,7 +9,7 @@ import NeuralNetworks: zero_one_loss
 ################################################
 
 
-function zero_one_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+function zero_one_calculate(probabilities::AbstractMatrix{Float64}, truth::AbstractMatrix{Float64})
     predictions = accuracy_threshold(probabilities)
     n = size(probabilities, 1)
     sum = 0
@@ -21,13 +19,13 @@ function zero_one_calculate(probabilities::Array{Float64, 2}, truth::Array{Float
     return sum / n
 end
 
-function micro_f1_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+function micro_f1_calculate(probabilities::AbstractMatrix{Float64}, truth::AbstractMatrix{Float64})
     predictions = micro_f1_threshold(probabilities)
     tp, tn, fp, fn = confusion_matrix(predictions[:], truth[:])
     return f1(tp, fp, fn)
 end
 
-function macro_f1_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+function macro_f1_calculate(probabilities::AbstractMatrix{Float64}, truth::AbstractMatrix{Float64})
     predictions = macro_f1_threshold(probabilities)
     n,m =size(predictions)
 
@@ -39,7 +37,7 @@ function macro_f1_calculate(probabilities::Array{Float64, 2}, truth::Array{Float
     return macro_sum/m
 end
 
-function per_example_f1_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+function per_example_f1_calculate(probabilities::AbstractMatrix{Float64}, truth::AbstractMatrix{Float64})
     predictions = per_example_f1_threshold(probabilities)
     n,m =size(predictions)
 
@@ -52,7 +50,7 @@ function per_example_f1_calculate(probabilities::Array{Float64, 2}, truth::Array
 
 end
 
-function accuracy_calculate(probabilities::Array{Float64, 2}, truth::Array{Float64,2})
+function accuracy_calculate(probabilities::AbstractMatrix{Float64}, truth::AbstractMatrix{Float64})
     predictions = accuracy_threshold(probabilities)
     tp, tn, fp, fn = confusion_matrix(predictions[:], truth[:])
     return (tp + tn ) / (tp + tn + fp + fn)
@@ -60,10 +58,10 @@ function accuracy_calculate(probabilities::Array{Float64, 2}, truth::Array{Float
 end
 
 
-function confusion_matrix(predictions::Array{Float64}, truth::Array{Float64})
+function confusion_matrix(predictions::AbstractArray{Float64}, truth::AbstractArray{Float64})
     @assert length(predictions) == length(truth)
     n = length(predictions)
-    tp=tn=fp=fn=0
+    tp = tn = fp = fn = 0
 
     for i = 1:n
         if predictions[i] == 1.0
@@ -81,7 +79,7 @@ function confusion_matrix(predictions::Array{Float64}, truth::Array{Float64})
         end
     end
 
-    return tp,tn,fp,fn
+    return tp, tn, fp, fn
 end
 
 function f1(tp::Number, fp::Number, fn::Number)
@@ -89,7 +87,7 @@ function f1(tp::Number, fp::Number, fn::Number)
 end
 
 
-function accuracy_threshold(probabilities::Array{Probability, 2})
+function accuracy_threshold(probabilities::AbstractMatrix{Float64})
     n, m = size(probabilities)
     predictions = zeros(n,m)
 
@@ -102,7 +100,7 @@ function accuracy_threshold(probabilities::Array{Probability, 2})
 end
 
 
-function micro_f1_threshold(probabilities::Array{Probability, 2})
+function micro_f1_threshold(probabilities::AbstractMatrix{Float64})
 
     linprob = probabilities[:]
     threshold = f1_threshold(linprob)
@@ -112,7 +110,7 @@ function micro_f1_threshold(probabilities::Array{Probability, 2})
 end
 
 
-function macro_f1_threshold(probabilities::Array{Probability, 2})
+function macro_f1_threshold(probabilities::AbstractMatrix{Float64})
     n, m = size(probabilities)
     predictions = zeros(n,m)
     for j = 1:m
@@ -123,7 +121,7 @@ function macro_f1_threshold(probabilities::Array{Probability, 2})
     return predictions
 end
 
-function per_example_f1_threshold(probabilities::Array{Probability, 2})
+function per_example_f1_threshold(probabilities::AbstractMatrix{Float64})
     n,m = size(probabilities)
     predictions = zeros(n,m)
     for i = 1:n
@@ -135,7 +133,7 @@ function per_example_f1_threshold(probabilities::Array{Probability, 2})
 end
 
 
-function apply_threshold(probabilities::Array{Probability}, threshold::Float64)
+function apply_threshold(probabilities::AbstractArray{Float64}, threshold::Float64)
 
     n = length(probabilities)
     predictions = zeros(n)
@@ -145,7 +143,7 @@ function apply_threshold(probabilities::Array{Probability}, threshold::Float64)
     return predictions
 end
 
-function apply_threshold(probabilities::Array{Probability, 2}, threshold::Float64)
+function apply_threshold(probabilities::AbstractMatrix{Float64}, threshold::Float64)
     n, m = size(probabilities)
     predictions = zeros(n,m)
     for i = 1:n
@@ -156,7 +154,7 @@ function apply_threshold(probabilities::Array{Probability, 2}, threshold::Float6
     return predictions
 end
 
-function f1_threshold(probabilities::Array{Probability})
+function f1_threshold(probabilities::AbstractArray{Float64})
     sorted_probabilities = sort(probabilities)
     max_f1 = 0
     numerator = 0
@@ -173,5 +171,5 @@ function f1_threshold(probabilities::Array{Probability})
         end
     end
     return max_f1/2
-
 end
+
