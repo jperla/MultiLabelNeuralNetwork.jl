@@ -19,7 +19,7 @@ end
 ######################################################
 #  Log loss for a set of examples
 ######################################################
-function log_loss(y::Array{Float64}, y_hat::Array{Float64})
+function log_loss(y::AbstractArray{Float64}, y_hat::AbstractArray{Float64})
     assert(length(y) == length(y_hat))
     n = length(y)
     sum = 0
@@ -30,7 +30,7 @@ function log_loss(y::Array{Float64}, y_hat::Array{Float64})
 end
 
 
-function log_loss(Y::Array{Float64, 2}, Y_hat::Array{Float64,2})
+function log_loss(Y::AbstractMatrix{Float64}, Y_hat::AbstractMatrix{Float64})
     n, m = size(Y)
     @assert size(Y) == size(Y_hat)
     sum = 0.0
@@ -82,7 +82,7 @@ function zero_one_loss(y::Float64, y_hat::Float64)
     return int( y != y_hat)
 end
 
-function zero_one_loss(y::Array{Float64}, y_hat::Array{Float64})
+function zero_one_loss(y::AbstractArray{Float64}, y_hat::AbstractArray{Float64})
     sum = 0
     n = length(y)
     for i = 1:n
