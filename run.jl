@@ -1,6 +1,4 @@
 #!/usr/bin/env julia
-import ArgParse: ArgParseSettings, @add_arg_table, parse_args
-
 import StochasticGradient: train_samples!, StochasticGradientDescent
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
                        read_data, flat_weights!, flat_weights_length,
@@ -11,55 +9,7 @@ import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelS
                                 predict!, calculate_gradient!
 import Thresholds: accuracy_calculate, micro_f1_calculate
 
-
-function parse_commandline()
-    s = ArgParseSettings()
-
-    @add_arg_table s begin
-        "dataset"
-            help = "The dataset we want to use: emotions, scene, yeast, or reuters."
-            arg_type = String
-            required = true
-        "hidden"
-            help = "The number of hidden nodes."
-            arg_type = Integer
-            required = true
-        "--eta0"
-            help = "The initial learning rate."
-            arg_type = FloatingPoint
-            default = 0.5
-        "--adagrad"
-            help = "Use adagrad dynamic learning rate."
-            action = :store_true
-        "--time"
-            help = "Output timings for each iteration."
-            action = :store_true
-        "--epochs", "-e"
-            help = "Number of epochs to do."
-            arg_type = Integer
-            default = 100
-	"--regularization", "-r"
-	    help = "Regularization constan.t"
-            arg_type = FloatingPoint
-            default = 0.001
-        "--interval", "-i"
-            help = "How frequently to print progress."
-            arg_type = Integer
-            default = 10000
-        "--file_prefix", "-f"
-	    help = "Save weights at each interval to a file instead of calculating losses and printing to screen."
-	    arg_type = String
-	    default = ""
-        "--tanh"
-	    help = "Use TanH linked function (recommended by LeCunn) instead of Rectified Linear Units"
-            action = :store_true
-        "--dropout"
-            help = "Randomly zero out hidden nodes during training."
-            action = :store_true
-   end
-
-    return parse_args(s)
-end
+require("args.jl")
 
 function num_labels(g)
     g.num_labels
@@ -77,7 +27,7 @@ function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
     return loss, micro_f1, accuracy
 end
 
-function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10)
+function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10, showtime=false, savefile=false)
     y_hat = zeros(T, (size(Y, 1), num_labels(g)))
     test_y_hat = zeros(T, (size(testY, 1), num_labels(g)))
 
@@ -111,17 +61,13 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
     end
 end
 
+function main()
+#########################
+# Setup args
+#########################
+
 parsed_args = parse_commandline()
 dataset = parsed_args["dataset"]
-nepochs = parsed_args["epochs"]
-hidden_nodes = parsed_args["hidden"]
-initial_learning_rate = parsed_args["eta0"]
-adagrad = parsed_args["adagrad"]
-regularization_constant = parsed_args["regularization"]
-interval = parsed_args["interval"]
-showtime = parsed_args["time"]
-dropout = parsed_args["dropout"]
-tanh_link = parsed_args["tanh"]
 
 function flatten(s)
     s = replace(s, " ", "_")
@@ -135,7 +81,7 @@ function flatten(s)
     return s
 end
 
-file_prefix = parsed_args["file_prefix"]
+file_prefix = parsed_args["file"]
 savefile = ""
 if file_prefix != ""
     savefile = string(file_prefix, "_", flatten(join(ARGS, "_")))
@@ -147,7 +93,7 @@ end
 #########################
 # Read and cleanup data
 #########################
-println("Dropout on: $dropout")
+
 train_features, train_labels = read_data(dataset, "train")
 println("Successfully read data, now whitening...")
 train_features, train_mean, train_std = whiten(train_features)
@@ -164,6 +110,8 @@ test_features = prepend_intercept(test_features)
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)
 @assert size(train_labels, 1) == size(train_features, 1)
+@assert dimensions == size(test_features, 2)
+@assert nlabels == size(test_labels, 2)
 
 #########################
 # Setup Data and Run
@@ -171,18 +119,16 @@ nlabels = size(train_labels, 2)
 
 RUNT = Float64
 
-hidden_link = if tanh_link TanhLinkFunction() else RectifiedLinearUnitLinkFunction() end
-sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes, hidden_link, SigmoidLinkFunction())
-mweights = zeros(RUNT, flat_weights_length(sln))
+slnmll = slnmll_from_args(dimensions, nlabels, parsed_args)
+mweights = zeros(eltype(slnmll.sln.input_hidden), flat_weights_length(slnmll.sln))
 #flat_weights!(sln, mweights)
 
-if adagrad
-    @printf("SLN MLL AdaGrad\n")
-    slnmll = MultilabelSLNAdaGrad(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
-else
-    @printf("SLN MLL SGD\n")
-    slnmll = MultilabelSLNSGD(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
+nepochs = parsed_args["epochs"]
+interval = parsed_args["interval"]
+showtime = parsed_args["time"]
+
+@time learn(slnmll, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval, showtime=showtime, savefile=savefile)
+
 end
 
-@time learn(slnmll, mweights, train_features, train_labels, test_features, test_labels, epochs=nepochs, modn=interval)
-
+main()

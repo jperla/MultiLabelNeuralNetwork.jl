@@ -3,10 +3,13 @@ import StochasticGradient: read_weights, calculate_losses
 import NeuralNetworks: read_data, whiten, prepend_intercept, flat_weights_length
 import MultilabelNeuralNetwork: SLN_MLL, MultilabelSLNSGD, flat_weights!
 
-dataset = ARGS[1]
-hidden_nodes = int64(ARGS[2])
-weights_file = ARGS[3]
-train_or_test = ARGS[4]
+require("args.jl")
+
+parsed_args = parse_commandline()
+dataset = parsed_args["dataset"]
+hidden_nodes = parsed_args["hidden"]
+weights_file = parsed_args["file"]
+train_or_test = "train"
 
 train_features, train_labels = read_data(dataset, "train")
 println("Successfully read data, now whitening...")
@@ -29,12 +32,7 @@ end
 
 iter, weights = read_weights(weights_file)
 
-RUNT = Float64
-
-sln = SLN_MLL(RUNT, dimensions, nlabels, hidden_nodes)    
-mweights = zeros(RUNT, flat_weights_length(sln))
-flat_weights!(sln, mweights)
-classifier = MultilabelSLNSGD(sln, mweights)
+classifier = slnmll_from_args(dimensions, nlabels, parsed_args)
 
 losses = calculate_losses(classifier, weights, X, Y)
 @printf(" Log Loss | Hamming | Micro F1 |   0-1 \n")
