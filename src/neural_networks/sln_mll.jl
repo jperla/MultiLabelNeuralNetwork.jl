@@ -208,11 +208,11 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
     forward_propagate!(sln, activation, X, i, dropout)
     @assert assert_not_NaN(activation)
 
-    for j=1:size(Y, 2)
-        deltas.output[j] = log_loss_prime(Y[i,j], sigmoid(activation.output[j])) * sigmoid_prime(activation.output[j])
+    for k=1:size(Y, 2)
+        deltas.output[j] = log_loss_prime(Y[i,k], sigmoid(activation.output[k])) * sigmoid_prime(activation.output[k])
         if isequal(deltas.output[j], NaN)
-            logresult = log_loss_prime(Y[i,j], link_function(sln.output_link, activation.output[j]))
-            sigresult = link_function_prime(sln.output_link, activation.output[j])
+            logresult = log_loss_prime(Y[i,k], link_function(sln.output_link, activation.output[k]))
+            sigresult = link_function_prime(sln.output_link, activation.output[k])
             println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
         end
     end
@@ -222,6 +222,7 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
         for k = 1:length(activation.output)
             deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
         end
+        deltas.hidden[j] *= link_function_prime(sln.output_link, activation.hidden[j])
     end
 
     @assert assert_not_NaN(deltas)
