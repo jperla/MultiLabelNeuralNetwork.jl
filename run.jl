@@ -7,7 +7,7 @@ import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Deri
                        TanhLinkFunction, RectifiedLinearUnitLinkFunction, SigmoidLinkFunction
 import MultilabelNeuralNetwork: MultilabelSLN, MultilabelSLNAdaGrad, MultilabelSLNSGD,
                                 predict!, calculate_gradient!
-import Thresholds: accuracy_calculate, micro_f1_calculate
+import Thresholds: accuracy_calculate, micro_f1_calculate, zero_one_calculate
 
 require("args.jl")
 
@@ -24,7 +24,8 @@ function dataset_log_loss{T,U<:FloatingPoint,W<:FloatingPoint}(g, w::Vector{T},
     loss = log_loss(Y, y_hat)
     micro_f1 = micro_f1_calculate(y_hat, Y)
     accuracy = accuracy_calculate(y_hat, Y)
-    return loss, micro_f1, accuracy
+    zero_one = zero_one_calculate(y_hat,Y)
+    return loss, micro_f1, accuracy, zero_one
 end
 
 function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs=100, modn=10, showtime=false, savefile=false)
@@ -45,11 +46,11 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
                     @printf(f, "\n")
                     close(f)
                 else
-                    @time loss, micro_f1, accuracy = dataset_log_loss(g, w, X, Y, y_hat)
-    	            @time test_loss, test_micro, test_accuracy = dataset_log_loss(g, w, testX, testY, test_y_hat)
-                    @printf("Epoch %i Iter %i (loss %4f): %s", e, i, test_loss, w[1:3]')
-                    @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f", micro_f1, 1.0 - accuracy)
-                    @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f\n", test_micro, 1.0 - test_accuracy)
+                    @time loss, micro_f1, accuracy, zero_one = dataset_log_loss(g, w, X, Y, y_hat)
+    	            @time test_loss, test_micro, test_accuracy, test_zero_one = dataset_log_loss(g, w, testX, testY, test_y_hat)
+                    @printf("Epoch %i Iter %i (loss %4f): %s", e, i, loss, w[1:3]')
+                    @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f Zero-One: %4f", micro_f1, 1.0 - accuracy, zero_one)
+                    @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f Zero-One: %4f\n", test_micro, 1.0 - test_accuracy, test_zero_one)
                 end
             end
             if showtime
@@ -121,7 +122,7 @@ RUNT = Float64
 
 slnmll = slnmll_from_args(dimensions, nlabels, parsed_args)
 mweights = zeros(eltype(slnmll.sln.input_hidden), flat_weights_length(slnmll.sln))
-#flat_weights!(sln, mweights)
+flat_weights!(slnmll.sln, mweights)
 
 nepochs = parsed_args["epochs"]
 interval = parsed_args["interval"]

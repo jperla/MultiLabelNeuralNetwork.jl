@@ -222,7 +222,7 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
         for k = 1:length(activation.output)
             deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
         end
-        deltas.hidden[j] *= link_function_prime(sln.output_link, activation.hidden[j])
+        deltas.hidden[j] *= link_function_prime(sln.hidden_link, activation.hidden[j])
     end
 
     @assert assert_not_NaN(deltas)

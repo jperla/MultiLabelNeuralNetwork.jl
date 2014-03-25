@@ -43,7 +43,7 @@ end
 #############################################
 
 function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
-    return 0.0
+    return 2 * g.regularization_constant * weights[i]
 end
 
 function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, epoch::Int)
