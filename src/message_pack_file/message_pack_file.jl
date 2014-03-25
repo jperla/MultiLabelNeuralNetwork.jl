@@ -1,4 +1,4 @@
-import Msgpack: pack
+import Msgpack: pack, unpack
 
 typealias DictOrArray Union(Dict, Array)
 typealias DictOrArrayOrNothing Union(Dict, Array, Nothing)
