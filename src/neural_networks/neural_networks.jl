@@ -50,10 +50,6 @@ relu(x) = max(0, x) # rectified linear units
 # See http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf
 lecunn_tanh(x) = 1.7159 * tanh(2x/3) + 10e-5 * x
 
-function lecunn_tanh_prime{T<:FloatingPoint}(x::T)
-    return 1.7159 * ( 1 - tanh(2x/3)^2) * 2 + 10e-5
-end
-
 base_sigmoid{T<:FloatingPoint}(x::T) = (1.0 / (1.0 + e^(-x)))
 
 sigmoid{T<:FloatingPoint}(x::T) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)
@@ -62,6 +58,14 @@ sigmoid{T<:FloatingPoint}(x::T) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.
 @vectorize_1arg Number sigmoid                                                                                                      
 function sigmoid_prime{T<:FloatingPoint}(x::T)
     return 1.0 * base_sigmoid(x) * (1.0 - base_sigmoid(x))
+end
+
+function lecunn_tanh_prime{T<:FloatingPoint}(x::T)
+    return 1.7159 * ( 1 - tanh(2x/3)^2) * 2 + 10e-5
+end
+
+function rectified_prime{T<:FloatingPoint}(x::T)
+    return 1
 end
 
 type TanhLinkFunction <: LinkFunction
@@ -92,6 +96,11 @@ end
 function link_function_prime{T<:FloatingPoint}(f::TanhLinkFunction, input::T)
     return lecunn_tanh_prime(input)
 end
+
+function link_function_prime{T<:FloatingPoint}(f::RectifiedLinearUnitLinkFunction, input::T)
+    return rectified_prime(input)
+end
+
 
 ########################################
 # Inspection, Debugging, and Reporting

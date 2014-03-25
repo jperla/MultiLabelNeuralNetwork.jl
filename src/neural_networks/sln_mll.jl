@@ -209,11 +209,11 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
     @assert assert_not_NaN(activation)
 
     for k=1:size(Y, 2)
-        deltas.output[j] = log_loss_prime(Y[i,k], sigmoid(activation.output[k])) * sigmoid_prime(activation.output[k])
-        if isequal(deltas.output[j], NaN)
+        deltas.output[k] = log_loss_prime(Y[i,k], sigmoid(activation.output[k])) * sigmoid_prime(activation.output[k])
+        if isequal(deltas.output[k], NaN)
             logresult = log_loss_prime(Y[i,k], link_function(sln.output_link, activation.output[k]))
             sigresult = link_function_prime(sln.output_link, activation.output[k])
-            println("NaN spotted: Delta of output #$j, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
+            println("NaN spotted: Delta of output #$k, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
         end
     end
 
