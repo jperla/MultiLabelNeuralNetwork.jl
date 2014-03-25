@@ -31,10 +31,10 @@ function parse_commandline()
             help = "Number of epochs to do."
             arg_type = Integer
             default = 100
-	"--regularization", "-r"
-	    help = "Regularization constan.t"
+	      "--regularization", "-r"
+	          help = "Regularization constant."
             arg_type = FloatingPoint
-            default = 0.001
+            default = 0.0
         "--interval", "-i"
             help = "How frequently to print progress."
             arg_type = Integer
