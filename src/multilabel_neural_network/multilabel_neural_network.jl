@@ -4,7 +4,7 @@ import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Deri
                        fill!, flat_weights!, flat_weights_length
 
 import StochasticGradient: StochasticGradientDescent,
-                           predict!, train_samples!, calculate_gradient!
+                           predict!, train_samples!, calculate_gradient!, regularization
 
 ##########################################
 # Multilabel NN Types
@@ -64,6 +64,7 @@ MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
 
 function regularization{T}(g::MultilabelSLN{T}, weights::AbstractVector{T}, i::Int)
     @printf("Using multilabel regularization! %4f", g.regularization_constant)
+    println("Regularization function in multilabel_neural reached!!")
     return 2 * g.regularization_constant * weights[i]
 end
 

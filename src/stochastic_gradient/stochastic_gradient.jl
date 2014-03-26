@@ -9,7 +9,7 @@ length_of_weight_updates(g) = length(g.scratch_gradient)
 #############################################
 
 function learning_rate{T}(g::StochasticGradientDescent{T}, i::Int, t::Int)
-    return (g.initial_learning_rate / sqrt(t))
+    return (g.initial_learning_rate)
 end
 
 function learning_rate{T}(g::AdaGrad{T}, i::Int, t::Int)
@@ -42,15 +42,17 @@ end
 # Update Weights
 #############################################
 
-function regularization{T}(g::GradientScratch{T}, weights::Vector{T}, i::Int)
-    return 2 * g.regularization_constant * weights[i]
+function regularization{T}(g::GradientScratch{T}, weights::AbstractVector{T}, i::Int)
+    # defaults to no regularization
+    return 0.0
 end
 
 function update_weights!{T}(g::GradientScratch{T}, weights::Vector{T}, epoch::Int)
     for i in 1:length(weights)
-        nu = learning_rate(g, i, epoch)
-        weights[i] = weights[i] - (nu * (g.scratch_gradient[i] + regularization(g, weights, i)))
+        lambda = learning_rate(g, i, epoch)
+        weights[i] = weights[i] - (lambda * (g.scratch_gradient[i] + regularization(g, weights, i)))
     end
+    
 end
 
 #############################################
@@ -120,12 +122,12 @@ type MultilabelLogisticRegressionAdaGrad{T} <: AdaGrad{T}
 end
 MultilabelLogisticRegressionAdaGrad{T<:FloatingPoint}(dims::Int, num_labels::Int, eta0::T) = MultilabelLogisticRegressionSGD{T}(zeros(T,dims), num_labels, eta0, zeros(T, dims), zeros(T, num_labels))
 
+typealias BinaryLogisticRegression{T} Union(BinaryLogisticRegressionSGD{T}, BinaryLogisticRegressionAdaGrad{T})
+typealias MultilabelLogisticRegression{T} Union(MultilabelLogisticRegressionSGD{T}, MultilabelLogisticRegressionAdaGrad{T})
+
 ## Binary and multilabel gradients/predictions
 
 sigmoid(x) = 1.0 / (1.0 + e^(-x))
-
-typealias BinaryLogisticRegression{T} Union(BinaryLogisticRegressionSGD{T}, BinaryLogisticRegressionAdaGrad{T})
-typealias MultilabelLogisticRegression{T} Union(MultilabelLogisticRegressionSGD{T}, MultilabelLogisticRegressionAdaGrad{T})
 
 function predict!{T}(g::BinaryLogisticRegression{T}, weights::Vector{T}, X::AbstractMatrix{T}, y::Vector{T}, i::Int)
     y[i] = 0
