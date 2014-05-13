@@ -112,7 +112,7 @@ end
 # Classification / Testing
 #####################################
 
-function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::AbstractMatrix{U}, i::Int, dropout::Bool=false)
+function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::AbstractMatrix{U}, i::Int, dropout::Bool=false, testing::Bool=false)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
@@ -123,8 +123,11 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
             for j in 1:size(X, 2)
                 h += X[i, j] * sln.input_hidden[j, k]
             end
-
-            activation.hidden[k] = link_function(sln.hidden_link, h)
+            if dropout && testing
+                activation.hidden[k] = link_function(sln.hidden_link, h) * .5
+            else
+                activation.hidden[k] = link_function(sln.hidden_link, h)
+            end
         end
     end
 
@@ -149,7 +152,6 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
 
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
-
 end
 
 
@@ -187,7 +189,7 @@ end
 # end
 
 function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int)
-    forward_propagate!(sln, activation, X, i, false)
+    forward_propagate!(sln, activation, X, i, false, true)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
         y_hat[j] = link_function(sln.output_link, activation.output[j])
@@ -205,7 +207,7 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
     #   Calculate delta_j for each interior node
     #   Calculate weight updates
     ################################################################
-    forward_propagate!(sln, activation, X, i, dropout)
+    forward_propagate!(sln, activation, X, i, dropout, false)
     @assert assert_not_NaN(activation)
 
     for k=1:size(Y, 2)
