@@ -63,8 +63,6 @@ MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
 ##########################################
 
 function regularization{T}(g::MultilabelSLN{T}, weights::AbstractVector{T}, i::Int)
-    @printf("Using multilabel regularization! %4f", g.regularization_constant)
-    println("Regularization function in multilabel_neural reached!!")
     return 2 * g.regularization_constant * weights[i]
 end
 
