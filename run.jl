@@ -48,7 +48,7 @@ function learn{T}(g::StochasticGradientDescent{T}, w, X, Y, testX, testY; epochs
                 else
                     @time loss, micro_f1, accuracy, zero_one = dataset_log_loss(g, w, X, Y, y_hat)
                     @time test_loss, test_micro, test_accuracy, test_zero_one = dataset_log_loss(g, w, testX, testY, test_y_hat)
-                    @printf("%s", join(ARGS, " "))
+                    @printf("%s\n", join(ARGS, " "))
                     @printf("Epoch %i Iter %i (loss %4f): %s", e, i, loss, w[1:3]')
                     @printf("\t train:Micro_F1: %4f,  Hamming Loss: %4f Zero-One: %4f", micro_f1, 1.0 - accuracy, zero_one)
                     @printf("\t test:Micro_F1: %4f,  Hamming Loss: %4f Zero-One: %4f\n", test_micro, 1.0 - test_accuracy, test_zero_one)
