@@ -75,15 +75,15 @@ MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
 ##########################################
 
 function regularization{T}(g::MultilabelSLN{T}, weights::AbstractVector{T}, i::Int)
-    io = length(sln.input_output)
-    ih = length(sln.input_hidden)
-    ho = length(sln.hidden_output)
+    io = length(g.sln.input_output)
+    ih = length(g.sln.input_hidden)
+    ho = length(g.sln.hidden_output)
 
     if i <= io
         regularization_constant = g.rio
-    else if i <= io + ih
-        regulariztion_constant = g.rih
-    else if i <= io + ih + ho
+    elseif i <= io + ih
+        regularization_constant = g.rih
+    elseif i <= io + ih + ho
         regularization_constant = g.rho
     else
        throw(DomainError())

@@ -31,15 +31,15 @@ function parse_commandline()
             help = "Number of epochs to do."
             arg_type = Integer
             default = 100
-        "--rio",
+        "--rio"
             help = "Regularization constant between input and output layers."
             arg_type = FloatingPoint
             default = 0.0
-        "--rih",
+        "--rih"
             help = "Regularization constant between input and hidden layers."
             arg_type = FloatingPoint
             default = 0.0
-        "--rho",
+        "--rho"
             help = "Regularization constant between hidden and output layers."
             arg_type = FloatingPoint
             default = 0.0
