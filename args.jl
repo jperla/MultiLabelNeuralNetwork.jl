@@ -31,8 +31,16 @@ function parse_commandline()
             help = "Number of epochs to do."
             arg_type = Integer
             default = 100
-	      "--regularization", "-r"
-	          help = "Regularization constant."
+        "--rio",
+            help = "Regularization constant between input and output layers."
+            arg_type = FloatingPoint
+            default = 0.0
+        "--rih",
+            help = "Regularization constant between input and hidden layers."
+            arg_type = FloatingPoint
+            default = 0.0
+        "--rho",
+            help = "Regularization constant between hidden and output layers."
             arg_type = FloatingPoint
             default = 0.0
         "--interval", "-i"
@@ -60,7 +68,9 @@ function slnmll_from_args(dimensions::Int, nlabels::Int, parsed_args::Dict)
     hidden_nodes = parsed_args["hidden"]
     initial_learning_rate = parsed_args["eta0"]
     adagrad = parsed_args["adagrad"]
-    regularization_constant = parsed_args["regularization"]
+    rio = parsed_args["rio"]
+    rih = parsed_args["rih"]
+    rho = parsed_args["rho"]
     dropout = parsed_args["dropout"]
     tanh_link = parsed_args["tanh"]
 
@@ -69,10 +79,10 @@ function slnmll_from_args(dimensions::Int, nlabels::Int, parsed_args::Dict)
 
     if adagrad
         @printf("SLN MLL AdaGrad\n")
-        slnmll = MultilabelSLNAdaGrad(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
+        slnmll = MultilabelSLNAdaGrad(sln, initial_learning_rate=initial_learning_rate, rio=rio, rih=rih, rho=rho, dropout=dropout)
     else
         @printf("SLN MLL SGD\n")
-        slnmll = MultilabelSLNSGD(sln, initial_learning_rate=initial_learning_rate, regularization_constant=regularization_constant, dropout=dropout)
+        slnmll = MultilabelSLNSGD(sln, initial_learning_rate=initial_learning_rate, rio=rio, rih=rih, rho=rho, dropout=dropout)
     end
     return slnmll
 end

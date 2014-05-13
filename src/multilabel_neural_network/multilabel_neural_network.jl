@@ -14,7 +14,9 @@ immutable type MultilabelSLNSGD{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::T
-    regularization_constant::T
+    rih::T
+    rho::T
+    rio::T
     dropout::Bool
     sln::SLN_MLL
     activation::SLN_MLL_Activation
@@ -26,7 +28,9 @@ immutable type MultilabelSLNAdaGrad{T} <: StochasticGradientDescent{T}
     scratch_gradient::Vector{T}
     num_labels::Int
     initial_learning_rate::T
-    regularization_constant::T
+    rih::T
+    rho::T
+    rio::T
     dropout::Bool
     diagonal_sum_of_gradients::Vector{T}
     sln::SLN_MLL
@@ -43,18 +47,26 @@ typealias MultilabelSLN{T} Union(MultilabelSLNSGD{T}, MultilabelSLNAdaGrad{T})
 
 MultilabelSLNSGD{T}(sln::SLN_MLL{T};
                     initial_learning_rate::T=0.5,
-                    regularization_constant::T=0.0001,
+                    rih::T=0,
+                    rho::T=0,
+                    rio::T=0,
                     dropout::Bool=false) = 
                     MultilabelSLNSGD{T}(zeros(T, flat_weights_length(sln)),
-                                        num_labels(sln), initial_learning_rate, regularization_constant, dropout,
+                                        num_labels(sln), initial_learning_rate,
+                                        rih, rho, rio,
+                                        dropout,
                                         sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
 MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
                         initial_learning_rate::T=0.5, 
-                        regularization_constant::T=0.0001,
+                        rih::T=0,
+                        rho::T=0,
+                        rio::T=0,
                         dropout::Bool=false) = 
                         MultilabelSLNAdaGrad{T}(zeros(T, flat_weights_length(sln)),
-                                                num_labels(sln), initial_learning_rate, regularization_constant, dropout,
+                                                num_labels(sln), initial_learning_rate,
+                                                rih, rho, rio,
+                                                dropout,
                                                 zeros(T, length(flat_weights_length(sln))),
                                                 sln, SLN_MLL_Activation(sln), SLN_MLL_Deltas(sln), SLN_MLL_Derivatives(sln))
 
@@ -63,7 +75,20 @@ MultilabelSLNAdaGrad{T}(sln::SLN_MLL{T};
 ##########################################
 
 function regularization{T}(g::MultilabelSLN{T}, weights::AbstractVector{T}, i::Int)
-    return 2 * g.regularization_constant * weights[i]
+    io = length(sln.input_output)
+    ih = length(sln.input_hidden)
+    ho = length(sln.hidden_output)
+
+    if i <= io
+        regularization_constant = g.rio
+    else if i <= io + ih
+        regulariztion_constant = g.rih
+    else if i <= io + ih + ho
+        regularization_constant = g.rho
+    else
+       throw(DomainError())
+    end
+    return 2 * regularization_constant * weights[i]
 end
 
 function predict!{T}(g::MultilabelSLN{T}, weights::AbstractArray{T}, X::AbstractMatrix{T}, y_hat::AbstractMatrix{T}, i::Int)
