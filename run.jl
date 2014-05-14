@@ -97,17 +97,23 @@ end
 #########################
 
 train_features, train_labels = read_data(dataset, "train")
-println("Successfully read data, now whitening...")
-train_features, train_mean, train_std = whiten(train_features)
-train_features = prepend_intercept(train_features)
-
 test_features, test_labels = read_data(dataset, "test")
-test_features = whiten(test_features, train_mean, train_std)
+
+println("Successfully read data...")
+if !parsed_args["sparse"]
+    # Do not white when using sparse data
+    println("Now whitening...")
+    train_features, train_mean, train_std = whiten(train_features)
+    test_features = whiten(test_features, train_mean, train_std)
+end
+
+train_features = prepend_intercept(train_features)
 test_features = prepend_intercept(test_features)
 
-# attempting sparsification
-#train_features = sparse(train_features)
-#test_features = sparse(test_features)
+if parsed_args["sparse"]
+    train_features = sparse(train_features)
+    test_features = sparse(test_features)
+end
 
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)

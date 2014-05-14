@@ -24,6 +24,9 @@ function parse_commandline()
         "--adagrad"
             help = "Use adagrad dynamic learning rate."
             action = :store_true
+        "--sparse"
+            help = "Sparsify input data"
+            action = :store_true
         "--time"
             help = "Output timings for each iteration."
             action = :store_true
