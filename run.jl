@@ -106,8 +106,8 @@ test_features = whiten(test_features, train_mean, train_std)
 test_features = prepend_intercept(test_features)
 
 # attempting sparsification
-# train_features = sparse(train_features)
-# test_features = sparse(test_features)
+#train_features = sparse(train_features)
+#test_features = sparse(test_features)
 
 dimensions = size(train_features, 2)
 nlabels = size(train_labels, 2)
@@ -134,3 +134,4 @@ showtime = parsed_args["time"]
 end
 
 main()
+
