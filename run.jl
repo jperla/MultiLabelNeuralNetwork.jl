@@ -113,6 +113,12 @@ test_features = prepend_intercept(test_features)
 if parsed_args["sparse"]
     train_features = sparse(train_features)
     test_features = sparse(test_features)
+    @printf("train filled: %s  length: %s filled: %0.2f%%\n",
+            nfilled(train_features), length(train_features),
+            100 * nfilled(train_features) / length(train_features))
+    @printf("test filled: %s  length: %s filled: %0.2f%%\n",
+            nfilled(test_features), length(test_features),
+            100 * nfilled(test_features) / length(test_features))
 end
 
 dimensions = size(train_features, 2)
