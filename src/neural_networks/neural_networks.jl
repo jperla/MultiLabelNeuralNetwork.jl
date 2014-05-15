@@ -54,8 +54,10 @@ base_sigmoid{T<:FloatingPoint}(x::T) = (1.0 / (1.0 + e^(-x)))
 
 sigmoid{T<:FloatingPoint}(x::T) = base_sigmoid(x) #((2.0 * base_sigmoid(x)) - 0.5)
 
-@vectorize_1arg Number relu                                                                                                      
-@vectorize_1arg Number sigmoid                                                                                                      
+@vectorize_1arg Number lecunn_tanh
+@vectorize_1arg Number relu
+@vectorize_1arg Number sigmoid
+
 function sigmoid_prime{T<:FloatingPoint}(x::T)
     return 1.0 * base_sigmoid(x) * (1.0 - base_sigmoid(x))
 end
@@ -77,27 +79,27 @@ end
 type RectifiedLinearUnitLinkFunction <: LinkFunction
 end
 
-function link_function{T<:FloatingPoint}(f::TanhLinkFunction, input::T)
+function link_function{T}(f::TanhLinkFunction, input::T)
     return lecunn_tanh(input)
 end
 
-function link_function{T<:FloatingPoint}(f::SigmoidLinkFunction, input::T)
+function link_function{T}(f::SigmoidLinkFunction, input::T)
     return sigmoid(input)
 end
 
-function link_function{T<:FloatingPoint}(f::RectifiedLinearUnitLinkFunction, input::T)
+function link_function{T}(f::RectifiedLinearUnitLinkFunction, input::T)
     return relu(input)
 end
 
-function link_function_prime{T<:FloatingPoint}(f::SigmoidLinkFunction, input::T)
+function link_function_prime{T}(f::SigmoidLinkFunction, input::T)
     return sigmoid_prime(input)
 end
 
-function link_function_prime{T<:FloatingPoint}(f::TanhLinkFunction, input::T)
+function link_function_prime{T}(f::TanhLinkFunction, input::T)
     return lecunn_tanh_prime(input)
 end
 
-function link_function_prime{T<:FloatingPoint}(f::RectifiedLinearUnitLinkFunction, input::T)
+function link_function_prime{T}(f::RectifiedLinearUnitLinkFunction, input::T)
     return rectified_prime(input)
 end
 
