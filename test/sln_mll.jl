@@ -1,7 +1,7 @@
 using Base.Test
 
-import NeuralNetworks: SLN_MLL, SLN_MLL_Activation,
-                       forward_propagate!, calculate_label_probabilities!, zero!,
+import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
+                       back_propagate!, calculate_label_probabilities!, zero!,
                        top_features, top_weights, hidden_nodes_table,
                        sigmoid, TanhLinkFunction, SigmoidLinkFunction, RectifiedLinearUnitLinkFunction
 
@@ -28,7 +28,7 @@ for x1 in AbstractMatrix[x_dense, x_sparse]
     output_probabilities = zeros(TESTT, 3)
     calculate_label_probabilities!(sln, activation, x1, output_probabilities, 1)
     half = (0.5 .* ones(num_labels))
-    @printf("h: %s o: %s", half, output_probabilities)
+    @printf("h: %s o: %s", half', output_probabilities')
     @test output_probabilities == half
 
     # Train the first label up for every input
@@ -77,5 +77,47 @@ for x1 in AbstractMatrix[x_dense, x_sparse]
     @test output_probabilities[1:end] == [0.5, 1.0, 0.5]
 
     hidden_nodes_table(STDOUT, sln, input_names, output_labels, 6)
+end
+
+#####################################################
+# Random matrices should generate identical values 
+#  for dense and sparse versions (both input and NN)
+#####################################################
+random_dense = rand((1, num_dimensions))
+random_sparse = sparse(random_dense)
+
+random_sln = SLN_MLL(TESTT, num_dimensions, num_labels, num_hidden, RectifiedLinearUnitLinkFunction(), SigmoidLinkFunction())
+activation = SLN_MLL_Activation(random_sln)
+
+dense_output = zeros(TESTT, 3)
+calculate_label_probabilities!(random_sln, activation, random_dense, dense_output, 1)
+
+sparse_output = zeros(TESTT, 3)
+calculate_label_probabilities!(random_sln, activation, random_sparse, sparse_output, 1)
+
+@printf("s: %s d: %s", sparse_output', dense_output')
+@test sparse_output == dense_output
+
+#####################################################
+# input->output backprop tests
+#####################################################
+
+activation = SLN_MLL_Activation(sln)
+xb = ones((1, num_dimensions)) * 0.5
+yb = ones((1, num_labels))
+
+for i in 1:num_dimensions, j in 1:num_labels
+    zero!(sln)
+    sln.input_output[i, j] = 0.5
+
+    deltas = SLN_MLL_Deltas(sln)
+    derivatives = SLN_MLL_Derivatives(sln)
+    back_propagate!(sln, activation, deltas, derivatives, xb, yb, 1, false)
+
+    predicted_output = zeros(num_labels)
+    predicted_output[j] = 0.25
+    @test activation.output == predicted_output
+
+    @test derivatives.input_output[i, j] == -0.21891174955710097
 end
 
