@@ -1,7 +1,8 @@
 using Base.Test
 
 import NeuralNetworks: SLN_MLL, SLN_MLL_Activation, SLN_MLL_Deltas, SLN_MLL_Derivatives,
-                       back_propagate!, calculate_label_probabilities!, zero!,
+                       old_back_propagate!, back_propagate!, 
+                       calculate_label_probabilities!, zero!,
                        top_features, top_weights, hidden_nodes_table,
                        sigmoid, TanhLinkFunction, SigmoidLinkFunction, RectifiedLinearUnitLinkFunction
 
@@ -85,10 +86,12 @@ end
 #####################################################
 random_dense = rand((1, num_dimensions))
 random_sparse = sparse(random_dense)
+random_labels = rand((1, num_labels))
 
 random_sln = SLN_MLL(TESTT, num_dimensions, num_labels, num_hidden, RectifiedLinearUnitLinkFunction(), SigmoidLinkFunction())
 activation = SLN_MLL_Activation(random_sln)
 
+# test forward propagate
 dense_output = zeros(TESTT, 3)
 calculate_label_probabilities!(random_sln, activation, random_dense, dense_output, 1)
 
@@ -97,6 +100,22 @@ calculate_label_probabilities!(random_sln, activation, random_sparse, sparse_out
 
 @printf("s: %s d: %s", sparse_output', dense_output')
 @test sparse_output == dense_output
+
+# test back propagate
+deltas = SLN_MLL_Deltas(sln)
+derivatives = SLN_MLL_Derivatives(sln)
+back_propagate!(sln, activation, deltas, derivatives, 
+                random_dense, random_labels, 1, false)
+
+old_deltas = SLN_MLL_Deltas(sln)
+old_derivatives = SLN_MLL_Derivatives(sln)
+old_back_propagate!(sln, activation, old_deltas, old_derivatives, 
+                    random_dense, random_labels, 1, false)
+
+@printf("o: %s n: %s", old_derivatives.input_hidden', derivatives.input_hidden')
+@test old_derivatives.input_output == derivatives.input_output
+@test old_derivatives.input_hidden == derivatives.input_hidden
+@test old_derivatives.hidden_output == derivatives.hidden_output
 
 #####################################################
 # input->output backprop tests

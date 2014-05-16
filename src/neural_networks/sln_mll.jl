@@ -220,6 +220,50 @@ end
 
 function calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, derivatives::SLN_MLL_Derivatives{T}, deltas::SLN_MLL_Deltas{T}, X::AbstractMatrix{U}, i::Int)
     @assert length(deltas.hidden) == size(derivatives.input_hidden, 2)
+    
+    derivatives.input_hidden = X[i,:]' * deltas.hidden'
+
+    @assert assert_not_NaN(derivatives)
+
+    for j = 1:size(derivatives.hidden_output, 1)
+        for k = 1:size(derivatives.hidden_output, 2)
+            derivatives.hidden_output[j,k] = deltas.output[k] * activation.hidden_linked[j]
+        end
+    end
+    
+    derivatives.input_output = X[i,:]' * deltas.output'
+    
+    @assert assert_not_NaN(derivatives)
+
+    return derivatives
+end
+
+
+function old_back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int, dropout::Bool=false)
+    # Calculates the derivatives of all weights in the neural network through backpropagation
+    forward_propagate!(sln, activation, X, i, dropout, false)
+    @assert assert_not_NaN(activation)
+    num_output = size(Y, 2)
+    
+    for k=1:num_output
+        deltas.output[k] = log_loss_prime(Y[i,k], activation.output_linked[k]) * link_function_prime(sln.output_link, activation.output[k])
+    end
+    
+    for j = 1:length(deltas.hidden)
+        deltas.hidden[j] = 0
+        for k = 1:length(activation.output)
+            deltas.hidden[j] += deltas.output[k] * sln.hidden_output[j,k]
+        end
+        deltas.hidden[j] *= link_function_prime(sln.hidden_link, activation.hidden[j])
+    end
+
+    @assert assert_not_NaN(deltas)
+    old_calculate_derivatives!(sln, activation, derivatives, deltas, X, i)
+    @assert assert_not_NaN(derivatives)
+end
+
+function old_calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, derivatives::SLN_MLL_Derivatives{T}, deltas::SLN_MLL_Deltas{T}, X::AbstractMatrix{U}, i::Int)
+    @assert length(deltas.hidden) == size(derivatives.input_hidden, 2)
     for j = 1:size(derivatives.input_hidden, 1)
         for k = 1:size(derivatives.input_hidden, 2)
             derivatives.input_hidden[j,k] = deltas.hidden[k] * X[i,j]
