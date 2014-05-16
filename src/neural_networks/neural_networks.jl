@@ -91,6 +91,21 @@ function link_function{T}(f::RectifiedLinearUnitLinkFunction, input::T)
     return relu(input)
 end
 
+function inverse_link_function{T}(f::TanhLinkFunction, input::T)
+    @assert input == 0
+    return -Inf
+end
+
+function inverse_link_function{T}(f::SigmoidLinkFunction, input::T)
+    @assert input == 0
+    return -Inf
+end
+
+function inverse_link_function{T}(f::RectifiedLinearUnitLinkFunction, input::T)
+    @assert input >= 0
+    return input
+end
+
 function link_function_prime{T}(f::SigmoidLinkFunction, input::T)
     return sigmoid_prime(input)
 end

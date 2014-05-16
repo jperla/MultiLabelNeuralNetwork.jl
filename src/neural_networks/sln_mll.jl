@@ -16,7 +16,9 @@ end
 type SLN_MLL_Activation{T} <: NeuralNetworkStorage{T}
     # single layer neural network activation levels after being trained on input
     hidden::Activations{T}
+    hidden_linked::Activations{T} # after applying link function
     output::Activations{T}
+    output_linked::Activations{T}
 end
 
 type SLN_MLL_Deltas{T} <: NeuralNetworkStorage{T}
@@ -42,7 +44,7 @@ function SLN_MLL(T, num_dimensions::Int, num_labels::Int, num_hidden::Int, hidde
 end
 
 function SLN_MLL_Activation{T}(sln::SLN_MLL{T})
-    SLN_MLL_Activation{T}(zeros(num_hidden(sln)), zeros(num_output(sln)))
+    SLN_MLL_Activation{T}(zeros(num_hidden(sln)), zeros(num_hidden(sln)), zeros(num_output(sln)), zeros(num_output(sln)))
 end
 
 function SLN_MLL_Deltas{T}(sln::SLN_MLL{T})
@@ -116,22 +118,27 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
 
     for k in 1:size(sln.input_hidden, 2)
-        if dropout && randbool() # dropout only 50% of time
-            activation.hidden[k] = 0
+        if (!testing) && dropout && randbool() # dropout only 50% of time
+            activation.hidden[k] = inverse_link_function(0)
+            activation.hidden_linked[k] = 0
         else
             h = 0.0
             for j in 1:size(X, 2)
                 h += X[i, j] * sln.input_hidden[j, k]
             end
+            
+            activation.hidden[k] = h
+            
             if dropout && testing
-                activation.hidden[k] = link_function(sln.hidden_link, h) * .5
+                activation.hidden_linked[k] = link_function(sln.hidden_link, h) * .5
             else
-                activation.hidden[k] = link_function(sln.hidden_link, h)
+                activation.hidden_linked[k] = link_function(sln.hidden_link, h)
             end
         end
     end
 
     @assert assert_not_NaN(activation.hidden)
+    @assert assert_not_NaN(activation.hidden_linked)
 
     for k in 1:size(sln.input_output, 2)
         h = 0.0
@@ -145,15 +152,16 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     for k in 1:size(sln.input_output, 2)
         h = 0.0
         for j in 1:length(activation.hidden)
-            h += activation.hidden[j] * sln.hidden_output[j, k]
+            h += activation.hidden_linked[j] * sln.hidden_output[j, k]
         end
         activation.output[k] += h
     end
 
+    activation.output_linked = link_function(sln.output_link, activation.output) 
+    
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
 end
-
 
 function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::SparseMatrixCSC{U,Int64}, i::Int, dropout::Bool=false, testing::Bool=false)
     @assert size(X, 2) == num_dimensions(sln) == size(sln.input_hidden, 1)
@@ -162,26 +170,24 @@ function forward_propagate!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN
     @assert dropout == false
 
     activation.hidden = (X[i,:] * sln.input_hidden)[:]
-    activation.hidden = link_function(sln.hidden_link, activation.hidden)
+    activation.hidden_linked = link_function(sln.hidden_link, activation.hidden)
     @assert assert_not_NaN(activation.hidden)
 
     activation.output = (X[i,:] * sln.input_output)[:]
     @assert assert_not_NaN(activation.output)
     
-    activation.output += (activation.hidden' * sln.hidden_output)[:]
-    activation.output = link_function(sln.output_link, activation.output)
+    activation.output += (activation.hidden_linked' * sln.hidden_output)[:]
 
+    activation.output_linked = link_function(sln.output_link, activation.output)
     @assert length(activation.output) == num_labels(sln)
     @assert assert_not_NaN(activation.output)
 end
-
-
 
 function calculate_label_probabilities!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, X::AbstractMatrix{U}, y_hat::AbstractArray{W}, i::Int)
     forward_propagate!(sln, activation, X, i, false, true)
     @assert length(y_hat) == length(activation.output)
     for j in 1:length(y_hat)
-        y_hat[j] = link_function(sln.output_link, activation.output[j])
+        y_hat[j] = activation.output_linked[j]
     end
 end
 
@@ -191,21 +197,12 @@ end
 
 function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, activation, deltas, derivatives, X::AbstractMatrix{U}, Y::AbstractMatrix{W}, i::Int, dropout::Bool=false)
     # Calculates the derivatives of all weights in the neural network through backpropagation
-    ################################################################
-    #   Calculate delta_k
-    #   Calculate delta_j for each interior node
-    #   Calculate weight updates
-    ################################################################
     forward_propagate!(sln, activation, X, i, dropout, false)
     @assert assert_not_NaN(activation)
 
+    """
     for k=1:size(Y, 2)
-        deltas.output[k] = log_loss_prime(Y[i,k], sigmoid(activation.output[k])) * sigmoid_prime(activation.output[k])
-        if isequal(deltas.output[k], NaN)
-            logresult = log_loss_prime(Y[i,k], link_function(sln.output_link, activation.output[k]))
-            sigresult = link_function_prime(sln.output_link, activation.output[k])
-            println("NaN spotted: Delta of output #$k, logprim:$logresult[1:3]..., sigprime:$sigresult[1:3]...")
-        end
+        deltas.output[k] = log_loss_prime(Y[i,k], activation.output_linked[k]) * link_function_prime(sln.output_link, activation.output[k])
     end
 
     for j = 1:length(deltas.hidden)
@@ -215,13 +212,15 @@ function back_propagate!{T,U<:FloatingPoint,W<:FloatingPoint}(sln::SLN_MLL{T}, a
         end
         deltas.hidden[j] *= link_function_prime(sln.hidden_link, activation.hidden[j])
     end
-
+    """
     @assert assert_not_NaN(deltas)
+    
+    
+    
+    
     @assert assert_not_NaN(derivatives)
-    calculate_derivatives!(sln, activation, derivatives, deltas, X, i)
     @assert assert_not_NaN(derivatives)
 end
-
 
 function calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation::SLN_MLL_Activation{T}, derivatives::SLN_MLL_Derivatives{T}, deltas::SLN_MLL_Deltas{T}, X::AbstractMatrix{U}, i::Int)
     ############################################################
@@ -243,7 +242,7 @@ function calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation:
 
     for j = 1:size(derivatives.hidden_output, 1)
         for k = 1:size(derivatives.hidden_output, 2)
-            derivatives.hidden_output[j,k] = deltas.output[k] * activation.hidden[j]
+            derivatives.hidden_output[j,k] = deltas.output[k] * link_function_prime(sln.hidden_link, activation.hidden[j])
         end
     end
 
@@ -251,7 +250,9 @@ function calculate_derivatives!{T,U<:FloatingPoint}(sln::SLN_MLL{T}, activation:
         for k = 1:size(derivatives.input_output, 2)
             derivatives.input_output[j,k] = deltas.output[k] * X[i,j]
         end
-    end
+    end    
+    
+    @assert assert_not_NaN(derivatives)
 
     return derivatives
 end

@@ -51,29 +51,31 @@ for x1 in AbstractMatrix[x_dense, x_sparse]
     # Train the second label based on the second input, the other two based on the first
     sln.hidden_output[:] = [1e9 0.0 1e9;
                             0.0 1e9 0.0]
-    forward_propagate!(sln, activation, x1, 1)
     output_probabilities = zeros(TESTT, 3)
     calculate_label_probabilities!(sln, activation, x1, output_probabilities, 1)
 
     # Check that dense calculations are the same as sparse
     x1 = full(x1)
-    forward_propagate!(sln, activation, x1, 1)
     dense_probabilities = zeros(TESTT, 3)
     calculate_label_probabilities!(sln, activation, x1, dense_probabilities, 1)
+    @printf("dp: %s op: %s", dense_probabilities', output_probabilities')
     @test output_probabilities == dense_probabilities
 
+    @printf("ah: %s op: %s", activation.hidden_linked', output_probabilities')
+    @printf("ah: %s op: %s", activation.output_linked', output_probabilities')
 
-    @printf("ah: %s op: %s", activation.hidden', output_probabilities')
     """
     # tanh link function
     @test activation.hidden == [-1.71689444187673; 1.71689444187673]
     @test sigmoid(activation.output) == output_probabilities
     @test output_probabilities[1:end] == [0.0, 1.0, 0.0]
     """
+
     # relu link function
-    @test activation.hidden == [0.0; num_dimensions]
-    @test sigmoid(activation.output) == output_probabilities
+    @test activation.hidden_linked == [0.0; num_dimensions]
+    @test activation.output_linked == output_probabilities
     @test output_probabilities[1:end] == [0.5, 1.0, 0.5]
 
     hidden_nodes_table(STDOUT, sln, input_names, output_labels, 6)
 end
+
